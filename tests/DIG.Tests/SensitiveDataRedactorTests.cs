@@ -8,7 +8,8 @@ public class SensitiveDataRedactorTests
     [Fact]
     public void Redacts_Google_Api_Key()
     {
-        var input = "key is AIzaSyA1234567890abcdefghijklmnopqrstuvw done";
+        // Realistic length: "AIza" + 35 chars (39 total), starting with AIzaSy.
+        var input = "key is AIzaSyA1234567890abcdefghijklmnopqrstuv done";
         var r = SensitiveDataRedactor.Redact(input);
         Assert.DoesNotContain("AIzaSy", r.Text);
         Assert.True(r.AnyRedacted);
