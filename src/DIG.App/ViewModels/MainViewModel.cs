@@ -60,8 +60,8 @@ public sealed partial class MainViewModel : ObservableObject
     private ObservableCollection<SidebarItemViewModel> BuildSidebar() => new()
     {
         new(ModuleId.Browser,        "Browser",         "", true),
-        new(ModuleId.Workspaces,     "Workspaces",      "", false),
-        new(ModuleId.Infrastructure, "Infrastructure",  "", false),
+        new(ModuleId.Workspaces,     "Workspaces",      "", true),
+        new(ModuleId.Infrastructure, "Infrastructure",  "", true),
         new(ModuleId.BuildLookup,    "VMware Builds",   "", true),
         new(ModuleId.KnowledgeBase,  "Knowledge Base",  "", false),
         new(ModuleId.AiAssistant,    "AI Assistant",    "", true),
@@ -109,6 +109,8 @@ public sealed partial class MainViewModel : ObservableObject
             ModuleId.Settings => CreateSettings(),
             ModuleId.EmailTemplates => _sp.GetRequiredService<EmailTemplatesViewModel>(),
             ModuleId.BuildLookup => CreateBuildLookup(),
+            ModuleId.Infrastructure => CreateInfrastructure(),
+            ModuleId.Workspaces => CreateWorkspaces(),
             ModuleId.Bookmarks => CreateWithNavigation(_sp.GetRequiredService<BookmarksViewModel>(), v => ((BookmarksViewModel)v).NavigateRequested += OpenInBrowser),
             ModuleId.History => CreateWithNavigation(_sp.GetRequiredService<HistoryViewModel>(), v => ((HistoryViewModel)v).NavigateRequested += OpenInBrowser),
             _ => new PlaceholderViewModel(
@@ -133,6 +135,33 @@ public sealed partial class MainViewModel : ObservableObject
         var vm = _sp.GetRequiredService<BuildLookupViewModel>();
         vm.NavigateRequested += OpenInBrowser;
         vm.ImportFromPageRequested += () => _ = ImportBuildsFromPageAsync(vm);
+        return vm;
+    }
+
+    private object CreateInfrastructure()
+    {
+        var vm = _sp.GetRequiredService<InfrastructureViewModel>();
+        vm.NavigateRequested += OpenInBrowser;
+        return vm;
+    }
+
+    private object CreateWorkspaces()
+    {
+        var vm = _sp.GetRequiredService<WorkspacesViewModel>();
+        vm.SaveCurrentRequested += name =>
+        {
+            var urls = Tabs
+                .Select(t => t.Url)
+                .Where(u => !string.IsNullOrWhiteSpace(u) && u != "about:blank")
+                .Distinct()
+                .ToList();
+            vm.CommitSaved(name, urls);
+        };
+        vm.OpenRequested += ws =>
+        {
+            SelectModule(ModuleId.Browser);
+            Browser?.OpenTabs(ws.Urls);
+        };
         return vm;
     }
 
@@ -192,6 +221,7 @@ public sealed partial class MainViewModel : ObservableObject
         {
             case BookmarksViewModel b: b.Reload(); break;
             case HistoryViewModel h: h.Reload(); break;
+            case WorkspacesViewModel w: w.Reload(); break;
         }
     }
 
@@ -240,6 +270,31 @@ public sealed partial class MainViewModel : ObservableObject
         if (_moduleCache.TryGetValue(ModuleId.Bookmarks, out var bm) && bm is BookmarksViewModel b)
             b.Reload();
         SecurityStatus = "Bookmark added.";
+    }
+
+    [RelayCommand]
+    private void NewPrivateTab()
+    {
+        if (CurrentModuleId != ModuleId.Browser) SelectModule(ModuleId.Browser);
+        Browser?.NewPrivateTab();
+    }
+
+    [RelayCommand] private void CloseActiveTab() => Browser?.CloseActiveTab();
+    [RelayCommand] private void ZoomIn() => Browser?.ZoomIn();
+    [RelayCommand] private void ZoomOut() => Browser?.ZoomOut();
+    [RelayCommand] private void ZoomReset() => Browser?.ZoomReset();
+    [RelayCommand] private void FocusAddressBar() => Browser?.FocusAddressBar();
+
+    [RelayCommand]
+    private void CopyUrl()
+    {
+        if (ActiveTab is null) return;
+        try
+        {
+            System.Windows.Clipboard.SetText(ActiveTab.Url);
+            SecurityStatus = "Page URL copied to clipboard.";
+        }
+        catch { /* clipboard may be unavailable */ }
     }
 
     [RelayCommand]

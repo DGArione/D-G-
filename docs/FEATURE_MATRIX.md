@@ -17,7 +17,9 @@ updated with each increment and is the source of truth over any marketing copy.
 | History | ✅ | recorded, view, clear |
 | Downloads manager | ⬜ | planned |
 | Pinned tabs / tab groups / split view | ⬜ | planned |
-| Private/profile isolation | ⬜ | planned (do not treat as anonymity) |
+| Private/incognito tabs | ✅ | isolated WebView2 session, no history, cleared each launch — not anonymity |
+| Keyboard shortcuts (Ctrl+T/W/L/R, Alt+←/→, Ctrl +/−/0) + zoom + copy URL | ✅ | |
+| Default search engine | ✅ | Google by default; switch in Settings |
 | Ad/tracker blocker | ⬜ | planned (needs licensed rules engine) |
 | Find in page / reader / translate page | ⬜ | planned |
 | TLS validation (no silent bypass) | ✅ | WebView2 default; we never disable it |
@@ -57,7 +59,7 @@ updated with each increment and is the source of truth over any marketing copy.
 ## Infrastructure, utilities, remote (spec §9–11)
 | Feature | Status | Notes |
 |---|---|---|
-| Infrastructure inventory | ⬜ | schema present (`infrastructure_assets`); UI planned |
+| Infrastructure inventory | ✅ | CRUD + search + open mgmt URL + copy; credentials kept out |
 | Secure vault (DPAPI) foundation | ✅ | `ISecretStore` + DPAPI used for API key |
 | Hosts-file manager | ⬜ | planned (privileged helper required) |
 | SSH/SFTP/RDP launchers | ⬜ | planned |
@@ -67,7 +69,7 @@ updated with each increment and is the source of truth over any marketing copy.
 |---|---|---|
 | Calendar / shift import / ICS | ⬜ | planned |
 | Tasks & notes | ⬜ | planned |
-| Workspaces | ⬜ | planned |
+| Workspaces | ✅ | save current tabs as a named workspace; reopen/delete |
 | Knowledge base / full-text search | ⬜ | planned |
 | Time-zone clocks (Colombo/UTC) | ✅ | status bar |
 

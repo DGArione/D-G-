@@ -73,6 +73,8 @@ public partial class App : Application
         services.AddSingleton<HistoryRepository>();
         services.AddSingleton<EmailTemplateRepository>();
         services.AddSingleton<BuildCacheRepository>();
+        services.AddSingleton<InfrastructureRepository>();
+        services.AddSingleton<WorkspaceRepository>();
 
         // Security
         services.AddSingleton<ISecretStore>(_ => new DpapiSecretStore());
@@ -105,6 +107,8 @@ public partial class App : Application
         services.AddTransient<BuildLookupViewModel>();
         services.AddTransient<BookmarksViewModel>();
         services.AddTransient<HistoryViewModel>();
+        services.AddTransient<InfrastructureViewModel>();
+        services.AddTransient<WorkspacesViewModel>();
 
         // Window
         services.AddSingleton<MainWindow>();

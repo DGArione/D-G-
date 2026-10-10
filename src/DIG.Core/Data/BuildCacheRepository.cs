@@ -67,6 +67,22 @@ public sealed class BuildCacheRepository
         return list;
     }
 
+    public IReadOnlyList<VmwareReleaseRecord> All()
+    {
+        using var c = _factory.Open();
+        using var cmd = c.CreateCommand();
+        cmd.CommandText = "SELECT product, version, build, release_date FROM build_lookup_cache ORDER BY product, version;";
+        using var r = cmd.ExecuteReader();
+        var list = new List<VmwareReleaseRecord>();
+        while (r.Read())
+        {
+            list.Add(new VmwareReleaseRecord(
+                r.GetString(0), r.GetString(1), r.GetString(2),
+                r.IsDBNull(3) ? null : r.GetString(3)));
+        }
+        return list;
+    }
+
     public int Count(string? sourceTag = null)
     {
         using var c = _factory.Open();

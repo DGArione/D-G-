@@ -34,13 +34,13 @@ public sealed class AppSettingsService
 
     public SearchEngine SearchEngine
     {
-        get => Enum.TryParse<SearchEngine>(_settings.Get("search_engine", nameof(SearchEngine.DuckDuckGo)), out var e) ? e : SearchEngine.DuckDuckGo;
+        get => Enum.TryParse<SearchEngine>(_settings.Get("search_engine", nameof(SearchEngine.Google)), out var e) ? e : SearchEngine.Google;
         set => _settings.Set("search_engine", value.ToString());
     }
 
     public string Homepage
     {
-        get => _settings.Get("homepage", "https://duckduckgo.com");
+        get => _settings.Get("homepage", "https://www.google.com");
         set => _settings.Set("homepage", value);
     }
 

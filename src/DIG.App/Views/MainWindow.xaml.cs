@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -22,8 +23,9 @@ public partial class MainWindow : Window, IBrowserController
     private readonly DispatcherTimer _clockTimer;
 
     private readonly Dictionary<Guid, WebView2> _views = new();
-    private readonly List<(string url, bool activate)> _pending = new();
+    private readonly List<(string url, bool activate, bool isPrivate)> _pending = new();
     private CoreWebView2Environment? _env;
+    private CoreWebView2Environment? _privateEnv;
     private bool _envReady;
 
     public MainWindow(MainViewModel vm, AppSettingsService settings, HistoryRepository history, ILogger<MainWindow> logger)
@@ -60,12 +62,15 @@ public partial class MainWindow : Window, IBrowserController
             _vm.SecurityStatus = "WebView2 ready — TLS certificate validation on.";
 
             if (_pending.Count == 0)
-                _pending.Add((_settings.Homepage, true));
+                _pending.Add((_settings.Homepage, true, false));
 
             var pending = _pending.ToList();
             _pending.Clear();
-            foreach (var (url, activate) in pending)
-                await CreateTabAsync(url, activate);
+            foreach (var (url, activate, isPrivate) in pending)
+            {
+                if (isPrivate) await EnsurePrivateEnvAsync();
+                await CreateTabAsync(url, activate, isPrivate);
+            }
         }
         catch (Exception ex)
         {
@@ -85,17 +90,44 @@ public partial class MainWindow : Window, IBrowserController
         var target = string.IsNullOrWhiteSpace(url) ? _settings.Homepage : url!;
         if (!_envReady)
         {
-            _pending.Add((target, activate));
+            _pending.Add((target, activate, false));
             return;
         }
-        _ = CreateTabAsync(target, activate);
+        _ = CreateTabAsync(target, activate, false);
     }
 
-    private async Task CreateTabAsync(string url, bool activate)
+    public void NewPrivateTab(string? url = null)
     {
-        if (_env is null) return;
+        var target = string.IsNullOrWhiteSpace(url) ? _settings.Homepage : url!;
+        if (!_envReady)
+        {
+            _pending.Add((target, true, true));
+            return;
+        }
+        _ = NewPrivateTabAsync(target);
+    }
 
-        var tab = new BrowserTabViewModel { Url = url, Title = "New tab" };
+    private async Task NewPrivateTabAsync(string url)
+    {
+        await EnsurePrivateEnvAsync();
+        await CreateTabAsync(url, activate: true, isPrivate: true);
+    }
+
+    private async Task EnsurePrivateEnvAsync()
+    {
+        if (_privateEnv is not null) return;
+        var folder = Path.Combine(AppPaths.WebView2Dir, "InPrivate");
+        // Start each private session fresh: clear any leftover private profile data.
+        try { if (Directory.Exists(folder)) Directory.Delete(folder, true); } catch { }
+        _privateEnv = await CoreWebView2Environment.CreateAsync(userDataFolder: folder);
+    }
+
+    private async Task CreateTabAsync(string url, bool activate, bool isPrivate = false)
+    {
+        var env = isPrivate ? _privateEnv : _env;
+        if (env is null) return;
+
+        var tab = new BrowserTabViewModel { Url = url, Title = isPrivate ? "Private tab" : "New tab", IsPrivate = isPrivate };
         var wv = new WebView2 { Visibility = Visibility.Collapsed };
         _views[tab.Id] = wv;
         BrowserHost.Children.Add(wv);
@@ -115,7 +147,8 @@ public partial class MainWindow : Window, IBrowserController
             tab.CanGoBack = core.CanGoBack;
             tab.CanGoForward = core.CanGoForward;
             tab.Url = core.Source;
-            if (e.IsSuccess && !string.IsNullOrWhiteSpace(core.Source) && core.Source != "about:blank")
+            // Private tabs are never written to history.
+            if (!tab.IsPrivate && e.IsSuccess && !string.IsNullOrWhiteSpace(core.Source) && core.Source != "about:blank")
             {
                 try { _history.Add(core.Source, tab.Title); } catch { /* history is best-effort */ }
             }
@@ -123,7 +156,7 @@ public partial class MainWindow : Window, IBrowserController
 
         try
         {
-            await wv.EnsureCoreWebView2Async(_env);
+            await wv.EnsureCoreWebView2Async(env);
             ConfigureCore(wv.CoreWebView2!, tab);
             if (activate) Activate(tab);
             wv.CoreWebView2!.Navigate(NormalizeUrl(url));
@@ -263,6 +296,40 @@ public partial class MainWindow : Window, IBrowserController
             try { action(wv.CoreWebView2); }
             catch (Exception ex) { _logger.LogWarning(ex, "Browser action failed"); }
         }
+    }
+
+    public void CloseActiveTab()
+    {
+        if (_vm.ActiveTab is not null) CloseTab(_vm.ActiveTab);
+    }
+
+    public void ZoomIn() => AdjustZoom(0.1);
+    public void ZoomOut() => AdjustZoom(-0.1);
+    public void ZoomReset() => WithActiveView(wv => wv.ZoomFactor = 1.0);
+
+    private void AdjustZoom(double delta)
+        => WithActiveView(wv => wv.ZoomFactor = Math.Clamp(wv.ZoomFactor + delta, 0.5, 3.0));
+
+    private void WithActiveView(Action<WebView2> action)
+    {
+        if (_vm.ActiveTab is not null && _views.TryGetValue(_vm.ActiveTab.Id, out var wv))
+        {
+            try { action(wv); }
+            catch (Exception ex) { _logger.LogWarning(ex, "Browser view action failed"); }
+        }
+    }
+
+    public void FocusAddressBar()
+    {
+        Omnibox.Focus();
+        Omnibox.SelectAll();
+    }
+
+    public void OpenTabs(IEnumerable<string> urls)
+    {
+        var list = urls.Where(u => !string.IsNullOrWhiteSpace(u)).ToList();
+        for (var i = 0; i < list.Count; i++)
+            NewTab(list[i], activate: i == 0);
     }
 
     private static string NormalizeUrl(string url)

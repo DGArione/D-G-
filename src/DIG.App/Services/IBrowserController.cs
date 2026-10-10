@@ -10,8 +10,18 @@ namespace DIG.App.Services;
 public interface IBrowserController
 {
     void NewTab(string? url = null, bool activate = true);
+    void NewPrivateTab(string? url = null);
     void CloseTab(BrowserTabViewModel tab);
+    void CloseActiveTab();
     void Activate(BrowserTabViewModel tab);
+
+    void ZoomIn();
+    void ZoomOut();
+    void ZoomReset();
+    void FocusAddressBar();
+
+    /// <summary>Opens each URL as a new tab (used by Workspaces).</summary>
+    void OpenTabs(IEnumerable<string> urls);
 
     /// <summary>Interprets omnibox text (URL vs search) and navigates the active tab.</summary>
     void NavigateFromOmnibox(string text);

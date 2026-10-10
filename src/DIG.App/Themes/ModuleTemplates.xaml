@@ -259,7 +259,9 @@
                         </TextBox.InputBindings>
                     </TextBox>
                     <Button Content="Identify build" Margin="8,0,0,0" Style="{DynamicResource AccentButton}" Command="{Binding LookupCommand}" />
-                    <TextBlock Text="{Binding Status}" Style="{DynamicResource Text.Secondary}" Margin="12,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="420" />
+                    <TextBlock Text="Product" VerticalAlignment="Center" Margin="16,0,6,0" Style="{DynamicResource Text.Secondary}" />
+                    <ComboBox Width="170" VerticalAlignment="Center" ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}" />
+                    <TextBlock Text="{Binding Status}" Style="{DynamicResource Text.Secondary}" Margin="12,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="320" />
                 </StackPanel>
                 <WrapPanel Margin="0,8,0,0">
                     <Button Content="Open Broadcom KB" Margin="0,0,8,6" Style="{DynamicResource SubtleButton}" Command="{Binding OpenBroadcomKbCommand}" />
@@ -287,20 +289,69 @@
                 </StackPanel>
             </Border>
 
-            <StackPanel Grid.Row="3" Margin="0,14,0,0">
-                <TextBlock Text="Recent lookups" Style="{DynamicResource Text.Section}" />
-                <ItemsControl ItemsSource="{Binding Recent}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal" Margin="0,2">
-                                <TextBlock Text="{Binding Query}" Style="{DynamicResource Text.Mono}" Width="120" />
-                                <TextBlock Text="{Binding Confidence}" Width="90" Style="{DynamicResource Text.Secondary}" />
-                                <TextBlock Text="{Binding Product}" Style="{DynamicResource Text.Secondary}" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </StackPanel>
+            <Grid Grid.Row="3" Margin="0,14,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="260" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Browse builds for the selected product -->
+                <DockPanel Grid.Column="0" Margin="0,0,14,0">
+                    <TextBlock DockPanel.Dock="Top" Text="{Binding SelectedProduct, StringFormat=Known builds — {0}}"
+                               Style="{DynamicResource Text.Section}" />
+                    <Border Style="{DynamicResource Card}" Padding="8">
+                        <DockPanel>
+                            <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="160" />
+                                    <ColumnDefinition Width="150" />
+                                    <ColumnDefinition Width="90" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Product" Style="{DynamicResource Text.Secondary}" FontWeight="SemiBold" />
+                                <TextBlock Grid.Column="1" Text="Version" Style="{DynamicResource Text.Secondary}" FontWeight="SemiBold" />
+                                <TextBlock Grid.Column="2" Text="Build" Style="{DynamicResource Text.Secondary}" FontWeight="SemiBold" />
+                                <TextBlock Grid.Column="3" Text="Release date" Style="{DynamicResource Text.Secondary}" FontWeight="SemiBold" />
+                            </Grid>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding BrowseResults}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="160" />
+                                                    <ColumnDefinition Width="150" />
+                                                    <ColumnDefinition Width="90" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding Product}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Grid.Column="1" Text="{Binding Version}" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Grid.Column="2" Text="{Binding Build}" Style="{DynamicResource Text.Mono}" />
+                                                <TextBlock Grid.Column="3" Text="{Binding ReleaseDate}" Style="{DynamicResource Text.Secondary}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Border>
+                </DockPanel>
+
+                <!-- Recent lookups -->
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="Recent lookups" Style="{DynamicResource Text.Section}" />
+                    <ItemsControl ItemsSource="{Binding Recent}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                    <TextBlock Text="{Binding Query}" Style="{DynamicResource Text.Mono}" Width="90" />
+                                    <TextBlock Text="{Binding Confidence}" Style="{DynamicResource Text.Secondary}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Grid>
         </Grid>
     </DataTemplate>
 
@@ -366,6 +417,177 @@
                                 </StackPanel>
                                 <Button Grid.Column="1" Content="Open" Style="{DynamicResource SubtleButton}"
                                         Command="{Binding DataContext.OpenCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+        </Grid>
+    </DataTemplate>
+
+    <!-- ============================ INFRASTRUCTURE ============================ -->
+    <DataTemplate DataType="{x:Type vm:InfrastructureViewModel}">
+        <Grid Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Infrastructure Inventory" Style="{DynamicResource Text.Heading}" Margin="0,0,0,10" />
+
+            <DockPanel Grid.Row="1" Grid.Column="0" Margin="0,0,14,0">
+                <TextBox DockPanel.Dock="Top" Margin="0,0,0,8"
+                         Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Search name, IP, FQDN, customer, environment, role, tags" />
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                    <Button Content="New" Style="{DynamicResource SubtleButton}" Command="{Binding NewAssetCommand}" />
+                    <Button Content="Delete" Margin="8,0,0,0" Style="{DynamicResource SubtleButton}" Command="{Binding DeleteCommand}" />
+                </StackPanel>
+                <Border Style="{DynamicResource Card}" Padding="4">
+                    <ListBox ItemsSource="{Binding Assets}" SelectedItem="{Binding SelectedAsset}" Background="Transparent" BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="4">
+                                    <TextBlock Text="{Binding Name}" />
+                                    <TextBlock Style="{DynamicResource Text.Secondary}">
+                                        <Run Text="{Binding Environment, Mode=OneWay}" />
+                                        <Run Text="  " />
+                                        <Run Text="{Binding Fqdn, Mode=OneWay}" />
+                                        <Run Text="{Binding Ip, Mode=OneWay}" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+            </DockPanel>
+
+            <ScrollViewer Grid.Row="1" Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,8">
+                            <TextBlock Text="Name" Style="{DynamicResource Text.Secondary}" />
+                            <TextBox Text="{Binding EditName}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,8">
+                            <TextBlock Text="Environment" Style="{DynamicResource Text.Secondary}" />
+                            <ComboBox IsEditable="True" ItemsSource="{Binding Environments}" Text="{Binding EditEnvironment}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
+                            <TextBlock Text="IP address" Style="{DynamicResource Text.Secondary}" />
+                            <TextBox Text="{Binding EditIp}" FontFamily="{DynamicResource Font.Mono}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,8">
+                            <TextBlock Text="FQDN" Style="{DynamicResource Text.Secondary}" />
+                            <TextBox Text="{Binding EditFqdn}" FontFamily="{DynamicResource Font.Mono}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,8">
+                            <TextBlock Text="Port" Style="{DynamicResource Text.Secondary}" />
+                            <TextBox Text="{Binding EditPort}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,8">
+                            <TextBlock Text="Customer / project" Style="{DynamicResource Text.Secondary}" />
+                            <TextBox Text="{Binding EditCustomer}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,8,8">
+                            <TextBlock Text="Product" Style="{DynamicResource Text.Secondary}" />
+                            <TextBox Text="{Binding EditProduct}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="3" Grid.Column="1" Margin="0,0,0,8">
+                            <TextBlock Text="Version" Style="{DynamicResource Text.Secondary}" />
+                            <TextBox Text="{Binding EditVersion}" FontFamily="{DynamicResource Font.Mono}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="4" Grid.Column="0" Margin="0,0,8,8">
+                            <TextBlock Text="Role" Style="{DynamicResource Text.Secondary}" />
+                            <TextBox Text="{Binding EditRole}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="4" Grid.Column="1" Margin="0,0,0,8">
+                            <TextBlock Text="Tags" Style="{DynamicResource Text.Secondary}" />
+                            <TextBox Text="{Binding EditTags}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="5" Grid.Column="0" Margin="0,0,8,8">
+                            <TextBlock Text="Connection method" Style="{DynamicResource Text.Secondary}" />
+                            <TextBox Text="{Binding EditConnection}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="5" Grid.Column="1" Margin="0,0,0,8">
+                            <TextBlock Text="Username reference" Style="{DynamicResource Text.Secondary}" />
+                            <TextBox Text="{Binding EditUsername}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="Notes" Style="{DynamicResource Text.Secondary}" Margin="0,0,0,2" />
+                    <TextBox Text="{Binding EditNotes}" AcceptsReturn="True" TextWrapping="Wrap" Height="70" VerticalContentAlignment="Top" />
+
+                    <WrapPanel Margin="0,12,0,0">
+                        <Button Content="Save" Style="{DynamicResource AccentButton}" Command="{Binding SaveCommand}" Margin="0,0,8,6" />
+                        <Button Content="Open management URL" Style="{DynamicResource SubtleButton}" Command="{Binding OpenManagementCommand}" Margin="0,0,8,6" />
+                        <Button Content="Copy IP" Style="{DynamicResource SubtleButton}" Command="{Binding CopyIpCommand}" Margin="0,0,8,6" />
+                        <Button Content="Copy FQDN" Style="{DynamicResource SubtleButton}" Command="{Binding CopyFqdnCommand}" Margin="0,0,8,6" />
+                    </WrapPanel>
+                    <TextBlock Text="{Binding Status}" Style="{DynamicResource Text.Secondary}" Margin="0,8,0,0" />
+                    <TextBlock Text="Credentials are never stored here — keep secrets in the secure store and reference a username only."
+                               Style="{DynamicResource Text.Secondary}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </DataTemplate>
+
+    <!-- ============================ WORKSPACES ============================ -->
+    <DataTemplate DataType="{x:Type vm:WorkspacesViewModel}">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Workspaces" Style="{DynamicResource Text.Heading}" Margin="0,0,0,8" />
+
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
+                <TextBox Width="280" Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Name for this workspace" VerticalContentAlignment="Center" />
+                <Button Content="Save current tabs" Margin="8,0,0,0" Style="{DynamicResource AccentButton}" Command="{Binding SaveCurrentCommand}" />
+                <TextBlock Text="{Binding Status}" Style="{DynamicResource Text.Secondary}" Margin="12,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="360" />
+            </StackPanel>
+
+            <Border Grid.Row="2" Style="{DynamicResource Card}" Padding="4">
+                <ListBox ItemsSource="{Binding Workspaces}" SelectedItem="{Binding Selected}" Background="Transparent" BorderThickness="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{Binding Name}" />
+                                    <TextBlock Text="{Binding Summary}" Style="{DynamicResource Text.Secondary}" />
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="Open" Style="{DynamicResource SubtleButton}"
+                                        Command="{Binding DataContext.OpenCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}" />
+                                <Button Grid.Column="2" Content="Delete" Margin="8,0,0,0" Style="{DynamicResource SubtleButton}"
+                                        Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                         CommandParameter="{Binding}" />
                             </Grid>
                         </DataTemplate>

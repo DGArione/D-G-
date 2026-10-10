@@ -20,7 +20,18 @@
     <Window.InputBindings>
         <KeyBinding Modifiers="Control" Key="K" Command="{Binding OpenCommandPaletteCommand}" />
         <KeyBinding Modifiers="Control" Key="T" Command="{Binding NewTabCommand}" />
-        <KeyBinding Modifiers="Control" Key="L" Command="{Binding OpenCommandPaletteCommand}" />
+        <KeyBinding Modifiers="Control+Shift" Key="N" Command="{Binding NewPrivateTabCommand}" />
+        <KeyBinding Modifiers="Control" Key="W" Command="{Binding CloseActiveTabCommand}" />
+        <KeyBinding Modifiers="Control" Key="L" Command="{Binding FocusAddressBarCommand}" />
+        <KeyBinding Modifiers="Control" Key="R" Command="{Binding ReloadCommand}" />
+        <KeyBinding Modifiers="Alt" Key="Left" Command="{Binding GoBackCommand}" />
+        <KeyBinding Modifiers="Alt" Key="Right" Command="{Binding GoForwardCommand}" />
+        <KeyBinding Modifiers="Control" Key="OemPlus" Command="{Binding ZoomInCommand}" />
+        <KeyBinding Modifiers="Control" Key="Add" Command="{Binding ZoomInCommand}" />
+        <KeyBinding Modifiers="Control" Key="OemMinus" Command="{Binding ZoomOutCommand}" />
+        <KeyBinding Modifiers="Control" Key="Subtract" Command="{Binding ZoomOutCommand}" />
+        <KeyBinding Modifiers="Control" Key="D0" Command="{Binding ZoomResetCommand}" />
+        <KeyBinding Modifiers="Control" Key="NumPad0" Command="{Binding ZoomResetCommand}" />
     </Window.InputBindings>
 
     <Grid>
@@ -83,7 +94,8 @@
                     <TextBlock Grid.Column="0" Text="&#xE71E;" FontFamily="{DynamicResource Font.Icon}" FontSize="12"
                                Foreground="{DynamicResource Brush.TextSecondary}" VerticalAlignment="Center" Margin="10,0,6,0" />
                     <TextBox x:Name="Omnibox" Grid.Column="1" Background="Transparent" BorderThickness="0"
-                             VerticalContentAlignment="Center" FontFamily="{DynamicResource Font.Mono}"
+                             VerticalContentAlignment="Center" FontFamily="{DynamicResource Font.Ui}" FontSize="13"
+                             Foreground="{DynamicResource Brush.TextPrimary}"
                              Text="{Binding OmniboxText, UpdateSourceTrigger=PropertyChanged}"
                              ToolTip="Enter a URL, search, IP, FQDN or VMware build number">
                         <TextBox.InputBindings>
@@ -95,6 +107,9 @@
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="4,0,8,0" VerticalAlignment="Center">
                 <Button Style="{DynamicResource ToolbarButton}" Content="&#xE710;" ToolTip="New tab (Ctrl+T)" Command="{Binding NewTabCommand}" />
+                <Button Style="{DynamicResource ToolbarButton}" Content="&#xE727;" Foreground="{DynamicResource Brush.Violet}"
+                        ToolTip="New private tab (Ctrl+Shift+N) — isolated session, not saved to history" Command="{Binding NewPrivateTabCommand}" />
+                <Button Style="{DynamicResource ToolbarButton}" Content="&#xE8C8;" ToolTip="Copy page URL" Command="{Binding CopyUrlCommand}" />
                 <Button Style="{DynamicResource ToolbarButton}" Content="&#xE734;" ToolTip="Bookmark this page" Command="{Binding AddBookmarkCommand}" />
                 <Button Style="{DynamicResource ToolbarButton}" Content="&#xE721;" ToolTip="Command palette (Ctrl+K)" Command="{Binding OpenCommandPaletteCommand}" />
             </StackPanel>
@@ -114,7 +129,7 @@
                             <Border x:Name="tabBd" Margin="0,0,6,0" CornerRadius="6" Padding="10,5"
                                     Background="{DynamicResource Brush.Surface}" MaxWidth="220">
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Style="{DynamicResource ToolbarButton}" Width="18" Height="18" FontSize="9"
+                                    <Button x:Name="tabGlyph" Style="{DynamicResource ToolbarButton}" Width="18" Height="18" FontSize="9"
                                             Content="&#xE774;"
                                             Command="{Binding DataContext.ActivateTabCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                             CommandParameter="{Binding}" />
@@ -131,6 +146,12 @@
                                 <DataTrigger Binding="{Binding IsActive}" Value="True">
                                     <Setter TargetName="tabBd" Property="Background" Value="{DynamicResource Brush.SurfaceAlt}" />
                                     <Setter TargetName="tabTitle" Property="Foreground" Value="{DynamicResource Brush.Cyan}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsPrivate}" Value="True">
+                                    <Setter TargetName="tabBd" Property="BorderBrush" Value="{DynamicResource Brush.Violet}" />
+                                    <Setter TargetName="tabBd" Property="BorderThickness" Value="1" />
+                                    <Setter TargetName="tabGlyph" Property="Content" Value="&#xE727;" />
+                                    <Setter TargetName="tabGlyph" Property="Foreground" Value="{DynamicResource Brush.Violet}" />
                                 </DataTrigger>
                             </DataTemplate.Triggers>
                         </DataTemplate>

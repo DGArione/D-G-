@@ -24,10 +24,51 @@ public sealed partial class BuildLookupViewModel : ObservableObject
         _service = service;
         _cache = cache;
         Recent = new ObservableCollection<BuildLookupResult>();
+        BrowseResults = new ObservableCollection<VmwareReleaseRecord>();
         UpdateCounts();
+        Browse();
     }
 
     public ObservableCollection<BuildLookupResult> Recent { get; }
+    public ObservableCollection<VmwareReleaseRecord> BrowseResults { get; }
+
+    public IReadOnlyList<string> Products { get; } = new[]
+    {
+        "All products", "ESXi", "vCenter Server", "NSX", "vSAN",
+        "Cloud Foundation", "Tanzu / VKS", "Aria"
+    };
+
+    [ObservableProperty] private string _selectedProduct = "All products";
+
+    partial void OnSelectedProductChanged(string value) => Browse();
+
+    private void Browse()
+    {
+        var all = new List<VmwareReleaseRecord>(VmwareBuildIndex.LoadBundled());
+        try { all.AddRange(_cache.All()); } catch { /* cache best-effort */ }
+
+        var keyword = SelectedProduct switch
+        {
+            "ESXi" => "esxi",
+            "vCenter Server" => "vcenter",
+            "NSX" => "nsx",
+            "vSAN" => "vsan",
+            "Cloud Foundation" => "foundation",
+            "Tanzu / VKS" => "tanzu",
+            "Aria" => "aria",
+            _ => null
+        };
+
+        IEnumerable<VmwareReleaseRecord> filtered = all;
+        if (keyword is not null)
+            filtered = all.Where(r =>
+                r.Product.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                r.Version.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+
+        BrowseResults.Clear();
+        foreach (var r in filtered.OrderBy(r => r.Product).ThenBy(r => r.Version).Take(300))
+            BrowseResults.Add(r);
+    }
 
     [ObservableProperty] private string _query = string.Empty;
     [ObservableProperty] private BuildLookupResult? _result;
@@ -104,6 +145,7 @@ public sealed partial class BuildLookupViewModel : ObservableObject
             ? $"Imported {count} build(s) from the page. They now show as Verified in lookups."
             : "No build tables found on the current page. Open a Broadcom 'build numbers and versions' KB page first.";
         UpdateCounts();
+        Browse();
     }
 
     [RelayCommand]
@@ -122,6 +164,7 @@ public sealed partial class BuildLookupViewModel : ObservableObject
             var n = _cache.AddRange(records, "csv", "Possible", dlg.FileName);
             Status = n > 0 ? $"Imported {n} build(s) from CSV." : "No valid rows found in the CSV.";
             UpdateCounts();
+            Browse();
         }
         catch (Exception ex)
         {
@@ -136,5 +179,6 @@ public sealed partial class BuildLookupViewModel : ObservableObject
         _cache.Clear("browser-import");
         Status = "Cleared imported builds. Bundled reference index still active.";
         UpdateCounts();
+        Browse();
     }
 }

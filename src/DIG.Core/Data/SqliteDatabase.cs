@@ -121,6 +121,16 @@ public static class DatabaseMigrator
             created_utc TEXT NOT NULL
         );
         """,
+
+        // v2 — workspaces (named sets of browser tabs)
+        """
+        CREATE TABLE IF NOT EXISTS workspaces (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            name        TEXT NOT NULL,
+            data_json   TEXT NOT NULL,
+            updated_utc TEXT NOT NULL
+        );
+        """,
     };
 
     /// <summary>Migrates the connection to the latest version; returns the new version.</summary>
