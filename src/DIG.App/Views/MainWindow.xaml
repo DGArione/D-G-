@@ -198,11 +198,12 @@
                 <Grid x:Name="BrowserHost"
                       Visibility="{Binding IsBrowserVisible, Converter={StaticResource BoolToVis}}" />
                 <!-- Tool module host -->
-                <ContentControl Content="{Binding CurrentModule}"
+                <ContentControl Content="{Binding CurrentModule}" Style="{DynamicResource FadeInOnShow}"
                                 Visibility="{Binding IsBrowserVisible, Converter={StaticResource InverseBoolToVis}}" />
 
                 <!-- New-tab start page -->
-                <ScrollViewer VerticalScrollBarVisibility="Auto" Background="{DynamicResource Brush.Obsidian}"
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Background="{DynamicResource Brush.StartBackground}"
+                              Style="{DynamicResource FadeInOnShow}"
                               Visibility="{Binding ShowStartPage, Converter={StaticResource BoolToVis}}">
                     <StackPanel MaxWidth="840" Margin="40,52" HorizontalAlignment="Center">
                         <TextBlock HorizontalAlignment="Center" FontSize="46" FontWeight="Bold">

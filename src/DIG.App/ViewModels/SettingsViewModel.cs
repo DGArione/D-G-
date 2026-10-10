@@ -20,7 +20,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         _ai = ai;
 
         // Initialise backing fields directly so loading does not re-persist / re-apply.
-        _theme = settings.Theme;
+        _selectedThemePreset = ThemePresets.ById(settings.ThemePresetId);
+        _customBackgroundPath = settings.CustomBackgroundPath;
         _searchEngine = settings.SearchEngine;
         _homepage = settings.Homepage;
         _geminiModel = settings.GeminiModel;
@@ -31,14 +32,15 @@ public sealed partial class SettingsViewModel : ObservableObject
         UpdateApiKeyStatus();
     }
 
-    public IReadOnlyList<AppTheme> Themes { get; } = Enum.GetValues<AppTheme>();
+    public IReadOnlyList<ThemePreset> ThemePresetsList { get; } = ThemePresets.All;
     public IReadOnlyList<SearchEngine> SearchEngines { get; } = Enum.GetValues<SearchEngine>();
     public System.Collections.ObjectModel.ObservableCollection<string> AvailableModels { get; }
         = new(GeminiModels.Suggested);
 
     public string SecretBackendDescription => _settings.SecretBackendDescription;
 
-    [ObservableProperty] private AppTheme _theme;
+    [ObservableProperty] private ThemePreset _selectedThemePreset;
+    [ObservableProperty] private string? _customBackgroundPath;
     [ObservableProperty] private SearchEngine _searchEngine;
     [ObservableProperty] private string _homepage;
     [ObservableProperty] private string _geminiModel;
@@ -51,10 +53,33 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _apiKeyStatus = string.Empty;
     [ObservableProperty] private string _testResult = string.Empty;
 
-    partial void OnThemeChanged(AppTheme value)
+    partial void OnSelectedThemePresetChanged(ThemePreset value)
     {
-        _settings.Theme = value;
-        ThemeManager.Apply(value);
+        if (value is null) return;
+        _settings.ThemePresetId = value.Id;
+        ThemeManager.Apply(value, _settings.CustomBackgroundPath);
+    }
+
+    [RelayCommand]
+    private void BrowseBackground()
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Choose a background image",
+            Filter = "Images (*.jpg;*.jpeg;*.png;*.bmp;*.webp)|*.jpg;*.jpeg;*.png;*.bmp;*.webp|All files (*.*)|*.*"
+        };
+        if (dlg.ShowDialog() != true) return;
+        CustomBackgroundPath = dlg.FileName;
+        _settings.CustomBackgroundPath = dlg.FileName;
+        ThemeManager.Apply(SelectedThemePreset, dlg.FileName);
+    }
+
+    [RelayCommand]
+    private void ClearBackground()
+    {
+        CustomBackgroundPath = null;
+        _settings.CustomBackgroundPath = null;
+        ThemeManager.Apply(SelectedThemePreset, null);
     }
 
     partial void OnSearchEngineChanged(SearchEngine value) { _settings.SearchEngine = value; SettingsChanged?.Invoke(); }

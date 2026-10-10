@@ -6,6 +6,8 @@ using DIG.Core.Models;
 
 namespace DIG.App.ViewModels;
 
+public sealed record BookmarkGroup(string Folder, IReadOnlyList<Bookmark> Items);
+
 public sealed partial class BookmarksViewModel : ObservableObject
 {
     private readonly BookmarkRepository _repo;
@@ -15,16 +17,33 @@ public sealed partial class BookmarksViewModel : ObservableObject
     public BookmarksViewModel(BookmarkRepository repo)
     {
         _repo = repo;
-        Bookmarks = new ObservableCollection<Bookmark>();
+        Groups = new ObservableCollection<BookmarkGroup>();
         Reload();
     }
 
-    public ObservableCollection<Bookmark> Bookmarks { get; }
+    /// <summary>Bookmarks grouped by folder/category.</summary>
+    public ObservableCollection<BookmarkGroup> Groups { get; }
+
+    [ObservableProperty] private Bookmark? _selected;
+    [ObservableProperty] private string _editTitle = string.Empty;
+    [ObservableProperty] private string _editFolder = string.Empty;
+    [ObservableProperty] private string _status = string.Empty;
+
+    partial void OnSelectedChanged(Bookmark? value)
+    {
+        if (value is null) return;
+        EditTitle = value.Title;
+        EditFolder = value.Folder ?? string.Empty;
+    }
 
     public void Reload()
     {
-        Bookmarks.Clear();
-        foreach (var b in _repo.GetAll()) Bookmarks.Add(b);
+        Groups.Clear();
+        var grouped = _repo.GetAll()
+            .GroupBy(b => string.IsNullOrWhiteSpace(b.Folder) ? "Unsorted" : b.Folder!)
+            .OrderBy(g => g.Key == "Unsorted" ? "~~~" : g.Key, StringComparer.OrdinalIgnoreCase);
+        foreach (var g in grouped)
+            Groups.Add(new BookmarkGroup(g.Key, g.ToList()));
     }
 
     [RelayCommand]
@@ -34,12 +53,28 @@ public sealed partial class BookmarksViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void Select(Bookmark? b)
+    {
+        if (b is not null) Selected = b;
+    }
+
+    [RelayCommand]
     private void Delete(Bookmark? b)
     {
-        if (b is not null)
-        {
-            _repo.Delete(b.Id);
-            Reload();
-        }
+        var target = b ?? Selected;
+        if (target is null) return;
+        _repo.Delete(target.Id);
+        Reload();
+        Status = "Bookmark deleted.";
+    }
+
+    [RelayCommand]
+    private void Save()
+    {
+        if (Selected is null) { Status = "Select a bookmark first."; return; }
+        _repo.Update(Selected.Id, string.IsNullOrWhiteSpace(EditTitle) ? Selected.Url : EditTitle.Trim(),
+            string.IsNullOrWhiteSpace(EditFolder) ? null : EditFolder.Trim());
+        Reload();
+        Status = "Saved.";
     }
 }

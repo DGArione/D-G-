@@ -92,9 +92,17 @@
                 <TextBlock Text="Settings" Style="{DynamicResource Text.Heading}" />
 
                 <TextBlock Text="Appearance" Style="{DynamicResource Text.Section}" />
-                <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                     <TextBlock Text="Theme" Width="140" VerticalAlignment="Center" />
-                    <ComboBox Width="200" ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" />
+                    <ComboBox Width="220" ItemsSource="{Binding ThemePresetsList}" SelectedItem="{Binding SelectedThemePreset}"
+                              DisplayMemberPath="Name" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Background image" Width="140" VerticalAlignment="Center" />
+                    <Button Content="Choose image…" Style="{DynamicResource SubtleButton}" Command="{Binding BrowseBackgroundCommand}" />
+                    <Button Content="Clear" Margin="8,0,0,0" Style="{DynamicResource SubtleButton}" Command="{Binding ClearBackgroundCommand}" />
+                    <TextBlock Text="{Binding CustomBackgroundPath}" Style="{DynamicResource Text.Secondary}" Margin="10,0,0,0"
+                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="260" />
                 </StackPanel>
 
                 <TextBlock Text="Browsing" Style="{DynamicResource Text.Section}" />
@@ -363,32 +371,66 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <TextBlock Grid.Row="0" Text="Bookmarks" Style="{DynamicResource Text.Heading}" Margin="0,0,0,10" />
-            <Border Grid.Row="1" Style="{DynamicResource Card}" Padding="4">
-                <ListBox ItemsSource="{Binding Bookmarks}" Background="Transparent" BorderThickness="0">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Margin="4">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="{Binding Title}" />
-                                    <TextBlock Text="{Binding Url}" Style="{DynamicResource Text.Secondary}" />
+
+            <Border Grid.Row="1" Style="{DynamicResource Card}" Padding="8">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Groups}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,0,0,14">
+                                    <TextBlock Text="{Binding Folder}" Style="{DynamicResource Text.Section}" Margin="0,0,0,4" />
+                                    <ItemsControl ItemsSource="{Binding Items}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="4,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Grid.Column="0">
+                                                        <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Text="{Binding Url}" Style="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis" />
+                                                    </StackPanel>
+                                                    <Button Grid.Column="1" Content="Open" Style="{DynamicResource SubtleButton}"
+                                                            Command="{Binding DataContext.OpenCommand, RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
+                                                            CommandParameter="{Binding}" />
+                                                    <Button Grid.Column="2" Content="Edit" Margin="6,0,0,0" Style="{DynamicResource SubtleButton}"
+                                                            Command="{Binding DataContext.SelectCommand, RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
+                                                            CommandParameter="{Binding}" />
+                                                    <Button Grid.Column="3" Content="Delete" Margin="6,0,0,0" Style="{DynamicResource SubtleButton}"
+                                                            Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ScrollViewer}}"
+                                                            CommandParameter="{Binding}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
                                 </StackPanel>
-                                <Button Grid.Column="1" Content="Open" Style="{DynamicResource SubtleButton}"
-                                        Command="{Binding DataContext.OpenCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                        CommandParameter="{Binding}" />
-                                <Button Grid.Column="2" Content="Delete" Margin="8,0,0,0" Style="{DynamicResource SubtleButton}"
-                                        Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                        CommandParameter="{Binding}" />
-                            </Grid>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+            <Border Grid.Row="2" Style="{DynamicResource Card}" Margin="0,10,0,0"
+                    Visibility="{Binding Selected, Converter={StaticResource M.NullToVis}}">
+                <StackPanel>
+                    <TextBlock Text="Edit bookmark" FontWeight="SemiBold" Margin="0,0,0,6" />
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Title" Width="80" VerticalAlignment="Center" />
+                        <TextBox Width="320" Text="{Binding EditTitle}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <TextBlock Text="Category" Width="80" VerticalAlignment="Center" />
+                        <TextBox Width="220" Text="{Binding EditFolder}" ToolTip="Folder / category name (e.g. VMware, Labs)" />
+                        <Button Content="Save" Margin="8,0,0,0" Style="{DynamicResource AccentButton}" Command="{Binding SaveCommand}" />
+                        <TextBlock Text="{Binding Status}" Style="{DynamicResource Text.Secondary}" Margin="10,0,0,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
             </Border>
         </Grid>
     </DataTemplate>

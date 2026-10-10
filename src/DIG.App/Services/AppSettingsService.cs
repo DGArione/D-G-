@@ -32,6 +32,18 @@ public sealed class AppSettingsService
         set => _settings.Set("theme", value.ToString());
     }
 
+    public string ThemePresetId
+    {
+        get => _settings.Get("theme_preset", "obsidian");
+        set => _settings.Set("theme_preset", value);
+    }
+
+    public string? CustomBackgroundPath
+    {
+        get { var v = _settings.Get("bg_path", ""); return string.IsNullOrWhiteSpace(v) ? null : v; }
+        set => _settings.Set("bg_path", value ?? "");
+    }
+
     public SearchEngine SearchEngine
     {
         get => Enum.TryParse<SearchEngine>(_settings.Get("search_engine", nameof(SearchEngine.Google)), out var e) ? e : SearchEngine.Google;

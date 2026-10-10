@@ -86,6 +86,17 @@ public sealed class BookmarkRepository
         return list;
     }
 
+    public void Update(long id, string title, string? folder)
+    {
+        using var c = _factory.Open();
+        using var cmd = c.CreateCommand();
+        cmd.CommandText = "UPDATE bookmarks SET title = $t, folder = $f WHERE id = $id;";
+        cmd.Parameters.AddWithValue("$t", title);
+        cmd.Parameters.AddWithValue("$f", (object?)folder ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$id", id);
+        cmd.ExecuteNonQuery();
+    }
+
     public void Delete(long id)
     {
         using var c = _factory.Open();

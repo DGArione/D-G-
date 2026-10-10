@@ -314,7 +314,13 @@ public partial class MainWindow : Window, IBrowserController
     public void Forward() => WithActiveCore(c => { if (c.CanGoForward) c.GoForward(); });
     public void Reload() => WithActiveCore(c => c.Reload());
     public void Stop() => WithActiveCore(c => c.Stop());
-    public void GoHome() => NavigateActive(_settings.Homepage);
+    public void GoHome()
+    {
+        if (_vm.ActiveTab is null) { NewTab(); return; }
+        _vm.ActiveTab.IsNewTab = true;   // show the start page
+        _vm.OmniboxText = string.Empty;
+        WithActiveCore(c => c.Navigate("about:blank"));
+    }
 
     private void WithActiveCore(Action<CoreWebView2> action)
     {

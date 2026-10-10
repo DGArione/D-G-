@@ -55,7 +55,47 @@ public sealed class AiService
             Messages = redacted
         };
 
-        return await _provider.CompleteAsync(request, ct).ConfigureAwait(false);
+        var result = await _provider.CompleteAsync(request, ct).ConfigureAwait(false);
+
+        // Self-heal: if the configured model is gone (Google retires them often),
+        // discover a current one, persist it, and retry once.
+        if (!result.Success && LooksLikeModelError(result.Error))
+        {
+            var models = await _provider.ListModelsAsync(key!, ct: ct).ConfigureAwait(false);
+            var better = PickBestModel(models, request.Model);
+            if (better is not null)
+            {
+                _settings.GeminiModel = better;
+                LastAutoSelectedModel = better;
+                result = await _provider.CompleteAsync(request with { Model = better }, ct).ConfigureAwait(false);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>Set when SendAsync auto-switched to a working model (for the UI to surface).</summary>
+    public string? LastAutoSelectedModel { get; private set; }
+
+    private static bool LooksLikeModelError(string? error)
+    {
+        if (string.IsNullOrEmpty(error)) return false;
+        var e = error.ToLowerInvariant();
+        return e.Contains("no longer available") || e.Contains("not found")
+            || e.Contains("not supported") || e.Contains("is not found for api version")
+            || e.Contains("update your code to use");
+    }
+
+    private static string? PickBestModel(IReadOnlyList<string> models, string current)
+    {
+        if (models.Count == 0) return null;
+        bool Ok(string m) => !string.Equals(m, current, StringComparison.OrdinalIgnoreCase);
+        // Prefer a non-preview "flash" model, then any flash, then any model.
+        return models.FirstOrDefault(m => Ok(m) && m.Contains("flash", StringComparison.OrdinalIgnoreCase)
+                                               && !m.Contains("thinking", StringComparison.OrdinalIgnoreCase)
+                                               && !m.Contains("lite", StringComparison.OrdinalIgnoreCase))
+            ?? models.FirstOrDefault(m => Ok(m) && m.Contains("flash", StringComparison.OrdinalIgnoreCase))
+            ?? models.FirstOrDefault(Ok);
     }
 
     public Task<AiResult> SinglePromptAsync(string prompt, CancellationToken ct = default)

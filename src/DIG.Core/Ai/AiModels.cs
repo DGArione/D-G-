@@ -45,27 +45,27 @@ public interface IAiProvider
 /// 1.5 family is being retired on the Generative Language API.</summary>
 public static class GeminiModels
 {
-    public const string Flash20 = "gemini-2.0-flash";
-    public const string Flash25 = "gemini-2.5-flash";
-    public const string Pro25 = "gemini-2.5-pro";
     public const string FlashLatest = "gemini-flash-latest";
     public const string ProLatest = "gemini-pro-latest";
 
     public static readonly IReadOnlyList<string> Suggested = new[]
     {
-        Flash20, Flash25, Pro25, FlashLatest, ProLatest
+        FlashLatest, ProLatest, "gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"
     };
 
-    public const string Default = Flash20;
+    // Alias that tracks the current flash model, so it survives model retirements;
+    // if it ever fails, AiService auto-discovers a working model.
+    public const string Default = FlashLatest;
 
-    /// <summary>True for models that are retired / not served on v1beta generateContent,
-    /// so a stored value can be migrated to <see cref="Default"/>.</summary>
+    /// <summary>True for models known to be retired / not served, so a stored value
+    /// can be migrated. (Runtime also self-heals on a model error.)</summary>
     public static bool IsDeprecated(string? model)
     {
         if (string.IsNullOrWhiteSpace(model)) return true;
         var m = model.Trim();
         return m.Contains("1.5", StringComparison.Ordinal)
             || m.Contains("1.0", StringComparison.Ordinal)
+            || m.Contains("2.0", StringComparison.Ordinal)
             || m.Equals("gemini-pro", StringComparison.OrdinalIgnoreCase)
             || m.Equals("gemini-pro-vision", StringComparison.OrdinalIgnoreCase);
     }

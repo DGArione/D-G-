@@ -42,7 +42,7 @@ public partial class App : Application
             InitialiseDatabase(_services);
 
             var settings = _services.GetRequiredService<AppSettingsService>();
-            ThemeManager.Apply(settings.Theme);
+            ThemeManager.ApplyFromSettings(settings);
 
             var window = _services.GetRequiredService<MainWindow>();
             window.Show();
@@ -83,7 +83,7 @@ public partial class App : Application
         services.AddSingleton<AppSettingsService>();
 
         // AI
-        services.AddSingleton(_ => new HttpClient { Timeout = TimeSpan.FromSeconds(60) });
+        services.AddSingleton(_ => new HttpClient { Timeout = TimeSpan.FromSeconds(120) });
         services.AddSingleton<IAiProvider, GeminiAiProvider>();
         services.AddSingleton<AiService>();
 

@@ -52,6 +52,22 @@
         <Setter Property="FontSize" Value="13" />
     </Style>
 
+    <!-- Fade + slight rise when an element becomes visible (module/start-page transitions) -->
+    <Style x:Key="FadeInOnShow" TargetType="FrameworkElement">
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+        <Style.Triggers>
+            <Trigger Property="Visibility" Value="Visible">
+                <Trigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.18" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.EnterActions>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <!-- Card / panel -->
     <Style x:Key="Card" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource Brush.Surface}" />
