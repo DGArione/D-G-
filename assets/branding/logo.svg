@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="96" viewBox="0 0 360 96" role="img" aria-label="D!G! Infrastructure Browser">
+  <rect width="360" height="96" rx="14" fill="#101318"/>
+  <g font-family="Segoe UI Variable Text, Segoe UI, Arial, sans-serif" font-weight="700" font-size="52">
+    <text x="24" y="64" fill="#F4F7FB">D</text>
+    <text x="66" y="64" fill="#35D9FF">!</text>
+    <text x="86" y="64" fill="#F4F7FB">G</text>
+    <text x="132" y="64" fill="#35D9FF">!</text>
+  </g>
+  <text x="166" y="44" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#A7B1C2">Infrastructure</text>
+  <text x="166" y="64" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#A7B1C2">Browser</text>
+</svg>

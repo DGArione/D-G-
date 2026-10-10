@@ -1,0 +1,373 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:vm="clr-namespace:DIG.App.ViewModels"
+                    xmlns:conv="clr-namespace:DIG.App.Converters">
+
+    <!-- Local converter instances (self-contained to avoid cross-dictionary lookup) -->
+    <conv:InverseBooleanConverter x:Key="M.InverseBool" />
+    <conv:BoolToVisibilityConverter x:Key="M.BoolToVis" />
+    <conv:InverseBoolToVisibilityConverter x:Key="M.InverseBoolToVis" />
+    <conv:NullToVisibilityConverter x:Key="M.NullToVis" />
+    <conv:StringToVisibilityConverter x:Key="M.StringToVis" />
+
+    <!-- ============================ AI ASSISTANT ============================ -->
+    <DataTemplate DataType="{x:Type vm:AiAssistantViewModel}">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                <TextBlock Text="AI Assistant" Style="{DynamicResource Text.Heading}" />
+                <TextBlock Text="{Binding ConfigurationHint}" Style="{DynamicResource Text.Secondary}" Margin="0,4,0,0" />
+            </StackPanel>
+
+            <Border Grid.Row="1" Style="{DynamicResource Card}" Padding="8">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Messages}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="6" Padding="10,8" CornerRadius="8" MaxWidth="620">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="HorizontalAlignment" Value="Left" />
+                                            <Setter Property="Background" Value="{DynamicResource Brush.SurfaceAlt}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsUser}" Value="True">
+                                                    <Setter Property="HorizontalAlignment" Value="Right" />
+                                                    <Setter Property="Background" Value="{DynamicResource Brush.Cyan}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsError}" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource Brush.Error}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsUser}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource Brush.Obsidian}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+            <Grid Grid.Row="2" Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" Text="{Binding Input, UpdateSourceTrigger=PropertyChanged}"
+                         VerticalContentAlignment="Center"
+                         IsEnabled="{Binding IsBusy, Converter={StaticResource M.InverseBool}}">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Return" Command="{Binding SendCommand}" />
+                    </TextBox.InputBindings>
+                </TextBox>
+                <Button Grid.Column="1" Content="Send" Margin="8,0,0,0" Style="{DynamicResource AccentButton}"
+                        Command="{Binding SendCommand}" />
+                <Button Grid.Column="2" Content="Clear" Margin="8,0,0,0" Style="{DynamicResource SubtleButton}"
+                        Command="{Binding ClearCommand}" />
+            </Grid>
+        </Grid>
+    </DataTemplate>
+
+    <!-- ============================ SETTINGS ============================ -->
+    <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20" MaxWidth="760" HorizontalAlignment="Left">
+                <TextBlock Text="Settings" Style="{DynamicResource Text.Heading}" />
+
+                <TextBlock Text="Appearance" Style="{DynamicResource Text.Section}" />
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Theme" Width="140" VerticalAlignment="Center" />
+                    <ComboBox Width="200" ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" />
+                </StackPanel>
+
+                <TextBlock Text="Browsing" Style="{DynamicResource Text.Section}" />
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="Default search engine" Width="140" VerticalAlignment="Center" />
+                    <ComboBox Width="200" ItemsSource="{Binding SearchEngines}" SelectedItem="{Binding SearchEngine}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Homepage" Width="140" VerticalAlignment="Center" />
+                    <TextBox Width="360" Text="{Binding Homepage}" />
+                </StackPanel>
+
+                <TextBlock Text="AI (Google Gemini)" Style="{DynamicResource Text.Section}" />
+                <CheckBox Content="Enable AI features" IsChecked="{Binding AiEnabled}" Margin="0,0,0,8" />
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="Model" Width="140" VerticalAlignment="Center" />
+                    <ComboBox Width="260" IsEditable="True" ItemsSource="{Binding SuggestedModels}" Text="{Binding GeminiModel}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="Creativity (temperature)" Width="140" VerticalAlignment="Center" TextWrapping="Wrap" />
+                    <Slider Width="200" Minimum="0" Maximum="1" TickFrequency="0.1" IsSnapToTickEnabled="True"
+                            Value="{Binding AiTemperature}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding AiTemperature, StringFormat=0.0}" Margin="10,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+                <CheckBox Content="Redact IPs / hostnames before sending to AI (in addition to always-on credential redaction)"
+                          IsChecked="{Binding RedactNetworkBeforeAi}" Margin="0,0,0,10" />
+
+                <Border Style="{DynamicResource Card}" Margin="0,4,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Gemini API key" FontWeight="SemiBold" />
+                        <TextBlock Text="Get a key from Google AI Studio. It is stored encrypted and never written to logs, the database or AI prompts."
+                                   Style="{DynamicResource Text.Secondary}" Margin="0,2,0,8" />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox Width="360" Text="{Binding GeminiApiKeyInput, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button Content="Save key" Margin="8,0,0,0" Style="{DynamicResource AccentButton}" Command="{Binding SaveApiKeyCommand}" />
+                            <Button Content="Clear" Margin="8,0,0,0" Style="{DynamicResource SubtleButton}" Command="{Binding ClearApiKeyCommand}" />
+                            <Button Content="Test" Margin="8,0,0,0" Style="{DynamicResource SubtleButton}" Command="{Binding TestApiKeyCommand}" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding ApiKeyStatus}" Style="{DynamicResource Text.Secondary}" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding TestResult}" Style="{DynamicResource Text.Secondary}" Margin="0,2,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Text="{Binding SecretBackendDescription, StringFormat=Secret storage: {0}}"
+                           Style="{DynamicResource Text.Secondary}" Margin="0,12,0,0" />
+            </StackPanel>
+        </ScrollViewer>
+    </DataTemplate>
+
+    <!-- ============================ EMAIL TEMPLATES ============================ -->
+    <DataTemplate DataType="{x:Type vm:EmailTemplatesViewModel}">
+        <Grid Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="240" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Email Templates" Style="{DynamicResource Text.Heading}" Margin="0,0,0,10" />
+
+            <!-- Template list -->
+            <DockPanel Grid.Row="1" Grid.Column="0" Margin="0,0,14,0">
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0">
+                    <Button Content="New" Style="{DynamicResource SubtleButton}" Command="{Binding NewTemplateCommand}" />
+                    <Button Content="Delete" Margin="8,0,0,0" Style="{DynamicResource SubtleButton}" Command="{Binding DeleteTemplateCommand}" />
+                </StackPanel>
+                <Border Style="{DynamicResource Card}" Padding="4">
+                    <ListBox ItemsSource="{Binding Templates}" SelectedItem="{Binding SelectedTemplate}"
+                             Background="Transparent" BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="4">
+                                    <TextBlock Text="{Binding Name}" />
+                                    <TextBlock Text="{Binding Category}" Style="{DynamicResource Text.Secondary}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+            </DockPanel>
+
+            <!-- Editor + draft -->
+            <ScrollViewer Grid.Row="1" Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="Template" Style="{DynamicResource Text.Section}" Margin="0,0,0,6" />
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <TextBox Width="300" Text="{Binding EditName}" />
+                        <TextBox Width="160" Margin="8,0,0,0" Text="{Binding EditCategory}" />
+                    </StackPanel>
+                    <TextBox Text="{Binding EditSubject}" Margin="0,0,0,6" />
+                    <TextBox Text="{Binding EditBody, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True"
+                             TextWrapping="Wrap" Height="150" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" />
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <Button Content="Save template" Style="{DynamicResource SubtleButton}" Command="{Binding SaveTemplateCommand}" />
+                        <Button Content="Refresh variables" Margin="8,0,0,0" Style="{DynamicResource SubtleButton}" Command="{Binding RebuildVariablesCommand}" />
+                    </StackPanel>
+
+                    <TextBlock Text="Variables for the current case" Style="{DynamicResource Text.Section}" />
+                    <ItemsControl ItemsSource="{Binding Variables}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                    <TextBlock Text="{Binding Name}" Width="160" VerticalAlignment="Center" />
+                                    <TextBox Width="320" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Text="Extra context for the AI (optional — e.g. notes about the current case)"
+                               Style="{DynamicResource Text.Section}" />
+                    <TextBox Text="{Binding ExtraContext}" AcceptsReturn="True" TextWrapping="Wrap" Height="60"
+                             VerticalContentAlignment="Top" />
+
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <TextBlock Text="Tone" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <ComboBox Width="180" ItemsSource="{Binding Tones}" SelectedItem="{Binding SelectedTone}" />
+                        <Button Content="Fill from template" Margin="12,0,0,0" Style="{DynamicResource SubtleButton}" Command="{Binding FillLocallyCommand}" />
+                        <Button Content="Draft with AI" Margin="8,0,0,0" Style="{DynamicResource AccentButton}" Command="{Binding GenerateWithAiCommand}" />
+                    </StackPanel>
+
+                    <TextBlock Text="Draft (review and edit before sending — nothing is sent automatically)"
+                               Style="{DynamicResource Text.Section}" />
+                    <TextBox Text="{Binding DraftOutput}" AcceptsReturn="True" TextWrapping="Wrap" Height="200"
+                             VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top"
+                             FontFamily="{DynamicResource Font.Ui}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <Button Content="Copy draft" Style="{DynamicResource SubtleButton}" Command="{Binding CopyDraftCommand}" />
+                        <TextBlock Text="{Binding Status}" Style="{DynamicResource Text.Secondary}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </DataTemplate>
+
+    <!-- ============================ VMWARE BUILD LOOKUP ============================ -->
+    <DataTemplate DataType="{x:Type vm:BuildLookupViewModel}">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="VMware Build Lookup" Style="{DynamicResource Text.Heading}" Margin="0,0,0,8" />
+
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
+                <TextBox Width="300" Text="{Binding Query, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Return" Command="{Binding LookupCommand}" />
+                    </TextBox.InputBindings>
+                </TextBox>
+                <Button Content="Identify build" Margin="8,0,0,0" Style="{DynamicResource AccentButton}" Command="{Binding LookupCommand}" />
+                <TextBlock Text="{Binding Status}" Style="{DynamicResource Text.Secondary}" Margin="12,0,0,0" VerticalAlignment="Center" />
+            </StackPanel>
+
+            <Border Grid.Row="2" Style="{DynamicResource Card}" Visibility="{Binding Result, Converter={StaticResource M.NullToVis}}">
+                <StackPanel>
+                    <TextBlock Text="{Binding Result.Product}" Style="{DynamicResource Text.Heading}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <TextBlock Text="Version " Style="{DynamicResource Text.Secondary}" />
+                        <TextBlock Text="{Binding Result.Version}" Style="{DynamicResource Text.Mono}" Margin="0,0,16,0" />
+                        <TextBlock Text="Build " Style="{DynamicResource Text.Secondary}" />
+                        <TextBlock Text="{Binding Result.Build}" Style="{DynamicResource Text.Mono}" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding Result.ReleaseDate, StringFormat=Release date: {0}}" Style="{DynamicResource Text.Secondary}" Margin="0,4,0,0" />
+                    <TextBlock Text="{Binding Result.Confidence, StringFormat=Confidence: {0}}" Margin="0,4,0,0" />
+                    <TextBlock Text="{Binding Result.Source, StringFormat=Source: {0}}" Style="{DynamicResource Text.Secondary}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                    <Button Content="Search official docs" HorizontalAlignment="Left" Margin="0,10,0,0"
+                            Style="{DynamicResource SubtleButton}" Command="{Binding SearchDocsCommand}" />
+                </StackPanel>
+            </Border>
+
+            <StackPanel Grid.Row="3" Margin="0,14,0,0">
+                <TextBlock Text="Recent lookups" Style="{DynamicResource Text.Section}" />
+                <ItemsControl ItemsSource="{Binding Recent}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Margin="0,2">
+                                <TextBlock Text="{Binding Query}" Style="{DynamicResource Text.Mono}" Width="120" />
+                                <TextBlock Text="{Binding Confidence}" Width="90" Style="{DynamicResource Text.Secondary}" />
+                                <TextBlock Text="{Binding Product}" Style="{DynamicResource Text.Secondary}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Grid>
+    </DataTemplate>
+
+    <!-- ============================ BOOKMARKS ============================ -->
+    <DataTemplate DataType="{x:Type vm:BookmarksViewModel}">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" Text="Bookmarks" Style="{DynamicResource Text.Heading}" Margin="0,0,0,10" />
+            <Border Grid.Row="1" Style="{DynamicResource Card}" Padding="4">
+                <ListBox ItemsSource="{Binding Bookmarks}" Background="Transparent" BorderThickness="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{Binding Title}" />
+                                    <TextBlock Text="{Binding Url}" Style="{DynamicResource Text.Secondary}" />
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="Open" Style="{DynamicResource SubtleButton}"
+                                        Command="{Binding DataContext.OpenCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}" />
+                                <Button Grid.Column="2" Content="Delete" Margin="8,0,0,0" Style="{DynamicResource SubtleButton}"
+                                        Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+        </Grid>
+    </DataTemplate>
+
+    <!-- ============================ HISTORY ============================ -->
+    <DataTemplate DataType="{x:Type vm:HistoryViewModel}">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <DockPanel Grid.Row="0" Margin="0,0,0,10">
+                <Button DockPanel.Dock="Right" Content="Clear history" Style="{DynamicResource SubtleButton}" Command="{Binding ClearAllCommand}" />
+                <TextBlock Text="History" Style="{DynamicResource Text.Heading}" />
+            </DockPanel>
+            <Border Grid.Row="1" Style="{DynamicResource Card}" Padding="4">
+                <ListBox ItemsSource="{Binding Entries}" Background="Transparent" BorderThickness="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{Binding Title}" />
+                                    <TextBlock Text="{Binding Url}" Style="{DynamicResource Text.Secondary}" />
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="Open" Style="{DynamicResource SubtleButton}"
+                                        Command="{Binding DataContext.OpenCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+        </Grid>
+    </DataTemplate>
+
+    <!-- ============================ PLACEHOLDER ============================ -->
+    <DataTemplate DataType="{x:Type vm:PlaceholderViewModel}">
+        <Grid Margin="20">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="520">
+                <TextBlock Text="{Binding Title}" Style="{DynamicResource Text.Heading}" HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding Message}" Style="{DynamicResource Text.Secondary}" TextAlignment="Center" Margin="0,10,0,0" />
+            </StackPanel>
+        </Grid>
+    </DataTemplate>
+
+</ResourceDictionary>

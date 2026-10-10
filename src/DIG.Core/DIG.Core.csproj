@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>DIG.Core</RootNamespace>
+    <AssemblyName>DIG.Core</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Cross-platform data + helpers. No Windows/WPF dependencies live here,
+         so this assembly is unit-testable on any OS and on CI. -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+  </ItemGroup>
+
+</Project>

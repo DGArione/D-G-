@@ -1,0 +1,53 @@
+{
+  "$description": "D!G! design tokens — single source of truth for brand colours, type and spacing. Mirrored in src/DIG.App/Themes/*.xaml.",
+  "brand": {
+    "name": "D!G!",
+    "descriptor": "Infrastructure Browser",
+    "tagline": "One workspace. Every tool. Less friction."
+  },
+  "color": {
+    "dark": {
+      "obsidian": "#101318",
+      "graphite": "#191E26",
+      "surface": "#222936",
+      "surfaceAlt": "#2A3240",
+      "border": "#303946",
+      "textPrimary": "#F4F7FB",
+      "textSecondary": "#A7B1C2",
+      "cyan": "#35D9FF",
+      "violet": "#8B7CFF",
+      "success": "#36D399",
+      "warning": "#F5B942",
+      "error": "#FF647C"
+    },
+    "light": {
+      "obsidian": "#F5F7FA",
+      "graphite": "#ECEFF3",
+      "surface": "#FFFFFF",
+      "surfaceAlt": "#EEF1F5",
+      "border": "#D4DAE2",
+      "textPrimary": "#18202B",
+      "textSecondary": "#5A6572",
+      "cyan": "#0E9EC9",
+      "violet": "#6B5CE0",
+      "success": "#1FA87A",
+      "warning": "#C98A12",
+      "error": "#D83A54"
+    }
+  },
+  "typography": {
+    "ui": "Segoe UI Variable Text, Segoe UI",
+    "mono": "Cascadia Code, Consolas, Courier New",
+    "scale": {
+      "appTitle": 22,
+      "moduleHeading": 19,
+      "sectionHeading": 14,
+      "body": 13,
+      "metadata": 11,
+      "mono": 13
+    }
+  },
+  "radius": { "control": 6, "card": 10, "dialog": 12 },
+  "spacing": { "xs": 4, "sm": 8, "md": 12, "lg": 16, "xl": 24, "xxl": 32 },
+  "motion": { "fastMs": 120, "baseMs": 160 }
+}

@@ -1,0 +1,26 @@
+<Project>
+
+  <!--
+    Shared MSBuild properties for every project in the D!G! solution.
+    Keeps versioning, language level and analysis consistent in one place.
+  -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+
+    <!-- Product / brand metadata -->
+    <Product>D!G! Infrastructure Browser</Product>
+    <Company>D!G!</Company>
+    <Authors>D!G!</Authors>
+    <Copyright>Copyright © D!G! 2026</Copyright>
+
+    <!-- Versioning: override in CI with -p:Version=x.y.z -->
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+  </PropertyGroup>
+
+</Project>
