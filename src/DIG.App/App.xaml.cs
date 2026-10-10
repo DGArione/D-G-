@@ -101,6 +101,7 @@ public partial class App : Application
 
         // View-models
         services.AddSingleton<MainViewModel>();
+        services.AddSingleton<DownloadsViewModel>(); // shared: window records, module displays
         services.AddTransient<AiAssistantViewModel>();
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<EmailTemplatesViewModel>();

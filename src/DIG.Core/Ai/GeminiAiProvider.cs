@@ -72,6 +72,58 @@ public sealed class GeminiAiProvider : IAiProvider
         }
     }
 
+    public async Task<IReadOnlyList<string>> ListModelsAsync(string apiKey, string? baseUrlOverride = null, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(apiKey)) return Array.Empty<string>();
+        var baseUrl = (baseUrlOverride ?? DefaultBaseUrl).TrimEnd('/');
+        var url = $"{baseUrl}/models?key={Uri.EscapeDataString(apiKey)}&pageSize=200";
+
+        try
+        {
+            using var resp = await _http.GetAsync(url, ct).ConfigureAwait(false);
+            var body = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+            if (!resp.IsSuccessStatusCode) return Array.Empty<string>();
+            return ParseModelList(body);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "ListModels failed");
+            return Array.Empty<string>();
+        }
+    }
+
+    internal static IReadOnlyList<string> ParseModelList(string body)
+    {
+        var result = new List<string>();
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (!doc.RootElement.TryGetProperty("models", out var models) || models.ValueKind != JsonValueKind.Array)
+                return result;
+
+            foreach (var m in models.EnumerateArray())
+            {
+                if (!m.TryGetProperty("name", out var nameEl)) continue;
+                var name = nameEl.GetString();
+                if (string.IsNullOrEmpty(name)) continue;
+
+                var supportsGenerate = false;
+                if (m.TryGetProperty("supportedGenerationMethods", out var methods) && methods.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var meth in methods.EnumerateArray())
+                        if (meth.GetString() == "generateContent") { supportsGenerate = true; break; }
+                }
+                if (!supportsGenerate) continue;
+
+                var id = name.StartsWith("models/", StringComparison.Ordinal) ? name["models/".Length..] : name;
+                result.Add(id);
+            }
+        }
+        catch (JsonException) { /* return what we have */ }
+        return result;
+    }
+
     /// <summary>Serialises the request into the Gemini JSON body. Internal for testing.</summary>
     internal static string BuildPayload(AiCompletionRequest request)
     {

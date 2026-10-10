@@ -25,6 +25,7 @@ public sealed partial class MainViewModel : ObservableObject
         SidebarItems[0].IsActive = true; // Browser active on launch
         BuildPalette();
         UpdateClocks();
+        RefreshStartBookmarks();
     }
 
     /// <summary>Set by the main window, which owns the WebView2 controls.</summary>
@@ -38,16 +39,49 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] private ModuleId _currentModuleId = ModuleId.Browser;
     [ObservableProperty] private object? _currentModule;
     [ObservableProperty] private bool _isBrowserVisible = true;
+    [ObservableProperty] private bool _showStartPage = true;
+
+    public ObservableCollection<DIG.Core.Models.Bookmark> StartBookmarks { get; } = new();
+
+    /// <summary>Implemented modules shown as quick tiles on the start page.</summary>
+    public IEnumerable<SidebarItemViewModel> StartTiles =>
+        SidebarItems.Where(s => s.Implemented && s.Id != ModuleId.Browser);
+
+    private BrowserTabViewModel? _subscribedTab;
+
+    private void UpdateStartPage()
+        => ShowStartPage = IsBrowserVisible && (ActiveTab?.IsNewTab ?? false);
+
+    partial void OnIsBrowserVisibleChanged(bool value) => UpdateStartPage();
+
+    private void RefreshStartBookmarks()
+    {
+        StartBookmarks.Clear();
+        foreach (var b in _bookmarks.GetAll().Take(12)) StartBookmarks.Add(b);
+    }
     [ObservableProperty] private string _currentModuleTitle = "Browser";
     [ObservableProperty] private string _omniboxText = string.Empty;
     [ObservableProperty] private string _colomboClock = "--:--";
     [ObservableProperty] private string _utcClock = "--:--";
     [ObservableProperty] private string _securityStatus = "Starting…";
+    [ObservableProperty] private bool _findVisible;
+    [ObservableProperty] private string _findText = string.Empty;
 
     partial void OnActiveTabChanged(BrowserTabViewModel? value)
     {
-        if (value is not null && CurrentModuleId == ModuleId.Browser)
+        if (_subscribedTab is not null) _subscribedTab.PropertyChanged -= OnActiveTabPropertyChanged;
+        _subscribedTab = value;
+        if (value is not null) value.PropertyChanged += OnActiveTabPropertyChanged;
+
+        if (value is not null && CurrentModuleId == ModuleId.Browser && !value.IsNewTab)
             OmniboxText = value.Url;
+        UpdateStartPage();
+    }
+
+    private void OnActiveTabPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(BrowserTabViewModel.IsNewTab))
+            UpdateStartPage();
     }
 
     public void UpdateClocks()
@@ -69,7 +103,7 @@ public sealed partial class MainViewModel : ObservableObject
         new(ModuleId.Calendar,       "Calendar",        "", false),
         new(ModuleId.Tasks,          "Tasks & Notes",   "", false),
         new(ModuleId.Ssh,            "SSH & Remote",    "", false),
-        new(ModuleId.Downloads,      "Downloads",       "", false),
+        new(ModuleId.Downloads,      "Downloads",       "", true),
         new(ModuleId.Bookmarks,      "Bookmarks",       "", true),
         new(ModuleId.History,        "History",         "", true),
         new(ModuleId.Settings,       "Settings",        "", true),
@@ -111,6 +145,7 @@ public sealed partial class MainViewModel : ObservableObject
             ModuleId.BuildLookup => CreateBuildLookup(),
             ModuleId.Infrastructure => CreateInfrastructure(),
             ModuleId.Workspaces => CreateWorkspaces(),
+            ModuleId.Downloads => _sp.GetRequiredService<DownloadsViewModel>(),
             ModuleId.Bookmarks => CreateWithNavigation(_sp.GetRequiredService<BookmarksViewModel>(), v => ((BookmarksViewModel)v).NavigateRequested += OpenInBrowser),
             ModuleId.History => CreateWithNavigation(_sp.GetRequiredService<HistoryViewModel>(), v => ((HistoryViewModel)v).NavigateRequested += OpenInBrowser),
             _ => new PlaceholderViewModel(
@@ -269,6 +304,7 @@ public sealed partial class MainViewModel : ObservableObject
         _bookmarks.Add(ActiveTab.Title, ActiveTab.Url);
         if (_moduleCache.TryGetValue(ModuleId.Bookmarks, out var bm) && bm is BookmarksViewModel b)
             b.Reload();
+        RefreshStartBookmarks();
         SecurityStatus = "Bookmark added.";
     }
 
@@ -286,6 +322,17 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand] private void FocusAddressBar() => Browser?.FocusAddressBar();
 
     [RelayCommand]
+    private void ShowFind()
+    {
+        if (CurrentModuleId != ModuleId.Browser) SelectModule(ModuleId.Browser);
+        FindVisible = true;
+    }
+
+    [RelayCommand] private void FindNext() => Browser?.FindInPage(FindText, true);
+    [RelayCommand] private void FindPrevious() => Browser?.FindInPage(FindText, false);
+    [RelayCommand] private void CloseFind() => FindVisible = false;
+
+    [RelayCommand]
     private void CopyUrl()
     {
         if (ActiveTab is null) return;
@@ -295,6 +342,14 @@ public sealed partial class MainViewModel : ObservableObject
             SecurityStatus = "Page URL copied to clipboard.";
         }
         catch { /* clipboard may be unavailable */ }
+    }
+
+    [RelayCommand]
+    private void OpenStartBookmark(DIG.Core.Models.Bookmark? b)
+    {
+        if (b is null) return;
+        SelectModule(ModuleId.Browser);
+        Browser?.NavigateActive(b.Url);
     }
 
     [RelayCommand]

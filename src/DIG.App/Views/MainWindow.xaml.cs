@@ -19,25 +19,29 @@ public partial class MainWindow : Window, IBrowserController
     private readonly MainViewModel _vm;
     private readonly AppSettingsService _settings;
     private readonly HistoryRepository _history;
+    private readonly DownloadsViewModel _downloads;
     private readonly ILogger<MainWindow> _logger;
     private readonly DispatcherTimer _clockTimer;
 
     private readonly Dictionary<Guid, WebView2> _views = new();
-    private readonly List<(string url, bool activate, bool isPrivate)> _pending = new();
+    private readonly List<(string url, bool activate, bool isPrivate, bool isNewTab)> _pending = new();
     private CoreWebView2Environment? _env;
     private CoreWebView2Environment? _privateEnv;
     private bool _envReady;
 
-    public MainWindow(MainViewModel vm, AppSettingsService settings, HistoryRepository history, ILogger<MainWindow> logger)
+    public MainWindow(MainViewModel vm, AppSettingsService settings, HistoryRepository history,
+        DownloadsViewModel downloads, ILogger<MainWindow> logger)
     {
         _vm = vm;
         _settings = settings;
         _history = history;
+        _downloads = downloads;
         _logger = logger;
 
         InitializeComponent();
         DataContext = _vm;
         _vm.Browser = this;
+        MaximizeFix.Enable(this);
 
         _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _clockTimer.Tick += (_, _) => _vm.UpdateClocks();
@@ -47,6 +51,12 @@ public partial class MainWindow : Window, IBrowserController
         {
             if (e.PropertyName == nameof(CommandPaletteViewModel.IsOpen) && _vm.CommandPalette.IsOpen)
                 Dispatcher.BeginInvoke(() => { PaletteInput.Focus(); PaletteInput.SelectAll(); });
+        };
+
+        _vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainViewModel.FindVisible) && _vm.FindVisible)
+                Dispatcher.BeginInvoke(() => { FindBox.Focus(); FindBox.SelectAll(); });
         };
 
         Loaded += OnLoaded;
@@ -62,14 +72,14 @@ public partial class MainWindow : Window, IBrowserController
             _vm.SecurityStatus = "WebView2 ready — TLS certificate validation on.";
 
             if (_pending.Count == 0)
-                _pending.Add((_settings.Homepage, true, false));
+                _pending.Add(("about:blank", true, false, true)); // open the start page
 
             var pending = _pending.ToList();
             _pending.Clear();
-            foreach (var (url, activate, isPrivate) in pending)
+            foreach (var (url, activate, isPrivate, isNewTab) in pending)
             {
                 if (isPrivate) await EnsurePrivateEnvAsync();
-                await CreateTabAsync(url, activate, isPrivate);
+                await CreateTabAsync(url, activate, isPrivate, isNewTab);
             }
         }
         catch (Exception ex)
@@ -87,30 +97,32 @@ public partial class MainWindow : Window, IBrowserController
 
     public void NewTab(string? url = null, bool activate = true)
     {
-        var target = string.IsNullOrWhiteSpace(url) ? _settings.Homepage : url!;
+        var isNewTab = string.IsNullOrWhiteSpace(url);
+        var target = isNewTab ? "about:blank" : url!;
         if (!_envReady)
         {
-            _pending.Add((target, activate, false));
+            _pending.Add((target, activate, false, isNewTab));
             return;
         }
-        _ = CreateTabAsync(target, activate, false);
+        _ = CreateTabAsync(target, activate, false, isNewTab);
     }
 
     public void NewPrivateTab(string? url = null)
     {
-        var target = string.IsNullOrWhiteSpace(url) ? _settings.Homepage : url!;
+        var isNewTab = string.IsNullOrWhiteSpace(url);
+        var target = isNewTab ? "about:blank" : url!;
         if (!_envReady)
         {
-            _pending.Add((target, true, true));
+            _pending.Add((target, true, true, isNewTab));
             return;
         }
-        _ = NewPrivateTabAsync(target);
+        _ = NewPrivateTabAsync(target, isNewTab);
     }
 
-    private async Task NewPrivateTabAsync(string url)
+    private async Task NewPrivateTabAsync(string url, bool isNewTab)
     {
         await EnsurePrivateEnvAsync();
-        await CreateTabAsync(url, activate: true, isPrivate: true);
+        await CreateTabAsync(url, activate: true, isPrivate: true, isNewTab: isNewTab);
     }
 
     private async Task EnsurePrivateEnvAsync()
@@ -122,12 +134,18 @@ public partial class MainWindow : Window, IBrowserController
         _privateEnv = await CoreWebView2Environment.CreateAsync(userDataFolder: folder);
     }
 
-    private async Task CreateTabAsync(string url, bool activate, bool isPrivate = false)
+    private async Task CreateTabAsync(string url, bool activate, bool isPrivate = false, bool isNewTab = false)
     {
         var env = isPrivate ? _privateEnv : _env;
         if (env is null) return;
 
-        var tab = new BrowserTabViewModel { Url = url, Title = isPrivate ? "Private tab" : "New tab", IsPrivate = isPrivate };
+        var tab = new BrowserTabViewModel
+        {
+            Url = isNewTab ? "" : url,
+            Title = isPrivate ? "Private tab" : "New tab",
+            IsPrivate = isPrivate,
+            IsNewTab = isNewTab
+        };
         var wv = new WebView2 { Visibility = Visibility.Collapsed };
         _views[tab.Id] = wv;
         BrowserHost.Children.Add(wv);
@@ -135,6 +153,9 @@ public partial class MainWindow : Window, IBrowserController
 
         wv.NavigationStarting += (_, e) =>
         {
+            // about:blank is only used to prime a new-tab's WebView; keep the start page.
+            if (string.Equals(e.Uri, "about:blank", StringComparison.OrdinalIgnoreCase)) return;
+            tab.IsNewTab = false;
             tab.IsLoading = true;
             tab.Url = e.Uri;
             if (tab.IsActive) _vm.OmniboxText = e.Uri;
@@ -185,6 +206,14 @@ public partial class MainWindow : Window, IBrowserController
         {
             e.Handled = true;
             NewTab(e.Uri);
+        };
+
+        core.FaviconChanged += (_, _) =>
+            tab.FaviconUrl = string.IsNullOrEmpty(core.FaviconUri) ? null : core.FaviconUri;
+
+        core.DownloadStarting += (_, e) =>
+        {
+            try { _downloads.Track(e.DownloadOperation); } catch (Exception ex) { _logger.LogWarning(ex, "download track"); }
         };
 
         core.ContextMenuRequested += OnContextMenuRequested;
@@ -324,6 +353,17 @@ public partial class MainWindow : Window, IBrowserController
         Omnibox.Focus();
         Omnibox.SelectAll();
     }
+
+    public void FindInPage(string text, bool forward)
+    {
+        if (string.IsNullOrEmpty(text)) return;
+        var backwards = (!forward).ToString().ToLowerInvariant();
+        var js = $"window.find({JsString(text)}, false, {backwards}, true)";
+        WithActiveCore(c => _ = c.ExecuteScriptAsync(js));
+    }
+
+    private static string JsString(string s)
+        => "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", " ") + "\"";
 
     public void OpenTabs(IEnumerable<string> urls)
     {

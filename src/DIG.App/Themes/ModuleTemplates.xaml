@@ -111,7 +111,8 @@
                 <CheckBox Content="Enable AI features" IsChecked="{Binding AiEnabled}" Margin="0,0,0,8" />
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                     <TextBlock Text="Model" Width="140" VerticalAlignment="Center" />
-                    <ComboBox Width="260" IsEditable="True" ItemsSource="{Binding SuggestedModels}" Text="{Binding GeminiModel}" />
+                    <ComboBox Width="260" IsEditable="True" ItemsSource="{Binding AvailableModels}" Text="{Binding GeminiModel}" />
+                    <Button Content="List models" Margin="8,0,0,0" Style="{DynamicResource SubtleButton}" Command="{Binding ListModelsCommand}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                     <TextBlock Text="Creativity (temperature)" Width="140" VerticalAlignment="Center" TextWrapping="Wrap" />
@@ -264,6 +265,7 @@
                     <TextBlock Text="{Binding Status}" Style="{DynamicResource Text.Secondary}" Margin="12,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="320" />
                 </StackPanel>
                 <WrapPanel Margin="0,8,0,0">
+                    <Button Content="Search the web" Margin="0,0,8,6" Style="{DynamicResource SubtleButton}" Command="{Binding SearchWebCommand}" />
                     <Button Content="Open Broadcom KB" Margin="0,0,8,6" Style="{DynamicResource SubtleButton}" Command="{Binding OpenBroadcomKbCommand}" />
                     <Button Content="Import from current page" Margin="0,0,8,6" Style="{DynamicResource SubtleButton}" Command="{Binding ImportFromPageCommand}" />
                     <Button Content="Import CSV…" Margin="0,0,8,6" Style="{DynamicResource SubtleButton}" Command="{Binding ImportCsvCommand}" />
@@ -593,6 +595,53 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
+            </Border>
+        </Grid>
+    </DataTemplate>
+
+    <!-- ============================ DOWNLOADS ============================ -->
+    <DataTemplate DataType="{x:Type vm:DownloadsViewModel}">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <DockPanel Grid.Row="0" Margin="0,0,0,10">
+                <Button DockPanel.Dock="Right" Content="Clear list" Style="{DynamicResource SubtleButton}" Command="{Binding ClearCommand}" />
+                <TextBlock Text="Downloads" Style="{DynamicResource Text.Heading}" />
+            </DockPanel>
+            <Border Grid.Row="1" Style="{DynamicResource Card}" Padding="4">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Items}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="4" Padding="8" CornerRadius="6" Background="{DynamicResource Brush.SurfaceAlt}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding Url}" Style="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis" />
+                                            <ProgressBar Height="4" Margin="0,6,0,4" Minimum="0" Maximum="1" Value="{Binding Progress}"
+                                                         Foreground="{DynamicResource Brush.Cyan}" Background="{DynamicResource Brush.Surface}" BorderThickness="0" />
+                                            <TextBlock Text="{Binding Status}" Style="{DynamicResource Text.Secondary}" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button Content="Open" Style="{DynamicResource SubtleButton}" Margin="6,0,0,0"
+                                                    Command="{Binding OpenFileCommand}" Visibility="{Binding IsComplete, Converter={StaticResource M.BoolToVis}}" />
+                                            <Button Content="Folder" Style="{DynamicResource SubtleButton}" Margin="6,0,0,0"
+                                                    Command="{Binding OpenFolderCommand}" Visibility="{Binding IsComplete, Converter={StaticResource M.BoolToVis}}" />
+                                            <Button Content="Cancel" Style="{DynamicResource SubtleButton}" Margin="6,0,0,0"
+                                                    Command="{Binding CancelCommand}" Visibility="{Binding IsComplete, Converter={StaticResource M.InverseBoolToVis}}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </Border>
         </Grid>
     </DataTemplate>

@@ -23,6 +23,7 @@
         <KeyBinding Modifiers="Control+Shift" Key="N" Command="{Binding NewPrivateTabCommand}" />
         <KeyBinding Modifiers="Control" Key="W" Command="{Binding CloseActiveTabCommand}" />
         <KeyBinding Modifiers="Control" Key="L" Command="{Binding FocusAddressBarCommand}" />
+        <KeyBinding Modifiers="Control" Key="F" Command="{Binding ShowFindCommand}" />
         <KeyBinding Modifiers="Control" Key="R" Command="{Binding ReloadCommand}" />
         <KeyBinding Modifiers="Alt" Key="Left" Command="{Binding GoBackCommand}" />
         <KeyBinding Modifiers="Alt" Key="Right" Command="{Binding GoForwardCommand}" />
@@ -129,10 +130,17 @@
                             <Border x:Name="tabBd" Margin="0,0,6,0" CornerRadius="6" Padding="10,5"
                                     Background="{DynamicResource Brush.Surface}" MaxWidth="220">
                                 <StackPanel Orientation="Horizontal">
-                                    <Button x:Name="tabGlyph" Style="{DynamicResource ToolbarButton}" Width="18" Height="18" FontSize="9"
-                                            Content="&#xE774;"
+                                    <Button Style="{DynamicResource ToolbarButton}" Width="20" Height="20"
                                             Command="{Binding DataContext.ActivateTabCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                            CommandParameter="{Binding}" />
+                                            CommandParameter="{Binding}">
+                                        <Grid>
+                                            <TextBlock x:Name="tabGlyph" Text="&#xE774;" FontFamily="{DynamicResource Font.Icon}"
+                                                       FontSize="10" Foreground="{DynamicResource Brush.TextSecondary}"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            <Image Width="16" Height="16" Source="{Binding FaviconUrl}"
+                                                   Visibility="{Binding FaviconUrl, Converter={StaticResource NullToVis}}" />
+                                        </Grid>
+                                    </Button>
                                     <TextBlock Text="{Binding Title}" VerticalAlignment="Center" Margin="6,0,6,0"
                                                TextTrimming="CharacterEllipsis" MaxWidth="150"
                                                Foreground="{DynamicResource Brush.TextSecondary}" x:Name="tabTitle" />
@@ -150,7 +158,7 @@
                                 <DataTrigger Binding="{Binding IsPrivate}" Value="True">
                                     <Setter TargetName="tabBd" Property="BorderBrush" Value="{DynamicResource Brush.Violet}" />
                                     <Setter TargetName="tabBd" Property="BorderThickness" Value="1" />
-                                    <Setter TargetName="tabGlyph" Property="Content" Value="&#xE727;" />
+                                    <Setter TargetName="tabGlyph" Property="Text" Value="&#xE727;" />
                                     <Setter TargetName="tabGlyph" Property="Foreground" Value="{DynamicResource Brush.Violet}" />
                                 </DataTrigger>
                             </DataTemplate.Triggers>
@@ -192,6 +200,105 @@
                 <!-- Tool module host -->
                 <ContentControl Content="{Binding CurrentModule}"
                                 Visibility="{Binding IsBrowserVisible, Converter={StaticResource InverseBoolToVis}}" />
+
+                <!-- New-tab start page -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Background="{DynamicResource Brush.Obsidian}"
+                              Visibility="{Binding ShowStartPage, Converter={StaticResource BoolToVis}}">
+                    <StackPanel MaxWidth="840" Margin="40,52" HorizontalAlignment="Center">
+                        <TextBlock HorizontalAlignment="Center" FontSize="46" FontWeight="Bold">
+                            <Run Text="D" Foreground="{DynamicResource Brush.TextPrimary}" />
+                            <Run Text="!" Foreground="{DynamicResource Brush.Cyan}" />
+                            <Run Text="G" Foreground="{DynamicResource Brush.TextPrimary}" />
+                            <Run Text="!" Foreground="{DynamicResource Brush.Cyan}" />
+                        </TextBlock>
+                        <TextBlock Text="One workspace. Every tool. Less friction." HorizontalAlignment="Center"
+                                   Style="{DynamicResource Text.Secondary}" Margin="0,2,0,22" />
+
+                        <Border Background="{DynamicResource Brush.Surface}" BorderBrush="{DynamicResource Brush.Border}"
+                                BorderThickness="1" CornerRadius="24" Padding="6,4" MaxWidth="620">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="&#xE721;" FontFamily="{DynamicResource Font.Icon}" FontSize="14"
+                                           Foreground="{DynamicResource Brush.TextSecondary}" VerticalAlignment="Center" Margin="12,0,8,0" />
+                                <TextBox Grid.Column="1" Background="Transparent" BorderThickness="0" FontSize="15"
+                                         VerticalContentAlignment="Center" Foreground="{DynamicResource Brush.TextPrimary}"
+                                         Text="{Binding OmniboxText, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="Search or enter a URL, IP, FQDN or VMware build number">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Return" Command="{Binding NavigateCommand}" />
+                                    </TextBox.InputBindings>
+                                </TextBox>
+                                <Button Grid.Column="2" Content="Go" Style="{DynamicResource AccentButton}" Margin="4,2"
+                                        Command="{Binding NavigateCommand}" />
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Text="Jump to" Style="{DynamicResource Text.Section}" Margin="0,28,0,8" />
+                        <ItemsControl ItemsSource="{Binding StartTiles}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Style="{DynamicResource SubtleButton}" Margin="0,0,10,10" Padding="14,10"
+                                            Command="{Binding DataContext.SelectModuleCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding Id}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Glyph}" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
+                                                       Foreground="{DynamicResource Brush.Cyan}" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding Label}" Margin="10,0,0,0" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="Bookmarks" Style="{DynamicResource Text.Section}" Margin="0,16,0,8"
+                                   Visibility="{Binding StartBookmarks.Count, Converter={StaticResource CountToVis}}" />
+                        <ItemsControl ItemsSource="{Binding StartBookmarks}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Style="{DynamicResource SubtleButton}" Margin="0,0,10,10" Padding="12,8" MaxWidth="220"
+                                            Command="{Binding DataContext.OpenStartBookmarkCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}">
+                                        <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Loading bar -->
+                <ProgressBar VerticalAlignment="Top" Height="3" IsIndeterminate="True" BorderThickness="0"
+                             Foreground="{DynamicResource Brush.Cyan}" Background="Transparent"
+                             Visibility="{Binding ActiveTab.IsLoading, Converter={StaticResource BoolToVis}}" />
+
+                <!-- Find-in-page bar -->
+                <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,10,18,0"
+                        Background="{DynamicResource Brush.Surface}" BorderBrush="{DynamicResource Brush.Border}"
+                        BorderThickness="1" CornerRadius="8" Padding="8,6"
+                        Visibility="{Binding FindVisible, Converter={StaticResource BoolToVis}}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox x:Name="FindBox" Width="220" VerticalContentAlignment="Center"
+                                 Text="{Binding FindText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Find on page">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Return" Command="{Binding FindNextCommand}" />
+                                <KeyBinding Key="Escape" Command="{Binding CloseFindCommand}" />
+                            </TextBox.InputBindings>
+                        </TextBox>
+                        <Button Style="{DynamicResource ToolbarButton}" Content="&#xE70E;" ToolTip="Previous" Command="{Binding FindPreviousCommand}" />
+                        <Button Style="{DynamicResource ToolbarButton}" Content="&#xE70D;" ToolTip="Next" Command="{Binding FindNextCommand}" />
+                        <Button Style="{DynamicResource ToolbarButton}" Content="&#xE8BB;" ToolTip="Close (Esc)" Command="{Binding CloseFindCommand}" />
+                    </StackPanel>
+                </Border>
             </Grid>
         </Grid>
 

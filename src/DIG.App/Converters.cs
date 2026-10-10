@@ -40,6 +40,16 @@ public sealed class NullToVisibilityConverter : IValueConverter
         => Binding.DoNothing;
 }
 
+/// <summary>Converts an int (e.g. a collection Count) to Visible when greater than zero.</summary>
+public sealed class CountToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object? parameter, CultureInfo culture)
+        => value is int n && n > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object? parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
 /// <summary>Converts a non-empty string to Visible, empty/null to Collapsed.</summary>
 public sealed class StringToVisibilityConverter : IValueConverter
 {

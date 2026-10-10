@@ -33,7 +33,8 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public IReadOnlyList<AppTheme> Themes { get; } = Enum.GetValues<AppTheme>();
     public IReadOnlyList<SearchEngine> SearchEngines { get; } = Enum.GetValues<SearchEngine>();
-    public IReadOnlyList<string> SuggestedModels { get; } = GeminiModels.Suggested;
+    public System.Collections.ObjectModel.ObservableCollection<string> AvailableModels { get; }
+        = new(GeminiModels.Suggested);
 
     public string SecretBackendDescription => _settings.SecretBackendDescription;
 
@@ -92,6 +93,28 @@ public sealed partial class SettingsViewModel : ObservableObject
         TestResult = string.Empty;
         UpdateApiKeyStatus();
         SettingsChanged?.Invoke();
+    }
+
+    [RelayCommand]
+    private async Task ListModelsAsync()
+    {
+        if (!_settings.HasGeminiApiKey)
+        {
+            TestResult = "Save a key before listing models.";
+            return;
+        }
+        TestResult = "Fetching available models…";
+        var (ok, models, error) = await _ai.ListModelsAsync();
+        if (!ok)
+        {
+            TestResult = error ?? "Could not list models.";
+            return;
+        }
+        AvailableModels.Clear();
+        foreach (var m in models) AvailableModels.Add(m);
+        if (!AvailableModels.Contains(GeminiModel) && AvailableModels.Count > 0)
+            GeminiModel = AvailableModels.FirstOrDefault(m => m.Contains("flash", StringComparison.OrdinalIgnoreCase)) ?? AvailableModels[0];
+        TestResult = $"Found {AvailableModels.Count} model(s). Pick one above.";
     }
 
     [RelayCommand]

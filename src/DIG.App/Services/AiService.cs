@@ -61,6 +61,19 @@ public sealed class AiService
     public Task<AiResult> SinglePromptAsync(string prompt, CancellationToken ct = default)
         => SendAsync(new[] { new AiMessage(AiRole.User, prompt) }, ct: ct);
 
+    /// <summary>Lists models available to the configured key that support generateContent.</summary>
+    public async Task<(bool Ok, IReadOnlyList<string> Models, string? Error)> ListModelsAsync(CancellationToken ct = default)
+    {
+        var key = _settings.GetGeminiApiKey();
+        if (string.IsNullOrWhiteSpace(key))
+            return (false, Array.Empty<string>(), "Save a Gemini API key first.");
+
+        var models = await _provider.ListModelsAsync(key!, ct: ct).ConfigureAwait(false);
+        return models.Count == 0
+            ? (false, models, "No models returned — check the key and network.")
+            : (true, models, null);
+    }
+
     public Task<AiResult> DraftEmailAsync(
         EmailTemplate template,
         IReadOnlyDictionary<string, string> values,

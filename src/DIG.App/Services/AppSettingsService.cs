@@ -46,7 +46,17 @@ public sealed class AppSettingsService
 
     public string GeminiModel
     {
-        get => _settings.Get("gemini_model", GeminiModels.Default);
+        get
+        {
+            var stored = _settings.Get("gemini_model", GeminiModels.Default);
+            // Migrate off retired models (e.g. gemini-1.5-*) so the AI keeps working.
+            if (GeminiModels.IsDeprecated(stored))
+            {
+                _settings.Set("gemini_model", GeminiModels.Default);
+                return GeminiModels.Default;
+            }
+            return stored;
+        }
         set => _settings.Set("gemini_model", value);
     }
 

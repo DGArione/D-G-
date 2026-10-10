@@ -124,6 +124,15 @@ public sealed partial class BuildLookupViewModel : ObservableObject
         NavigateRequested?.Invoke(url);
     }
 
+    /// <summary>Web search for the current query (fallback when a build isn't in the index).</summary>
+    [RelayCommand]
+    private void SearchWeb()
+    {
+        var q = Result?.Build ?? Query;
+        if (string.IsNullOrWhiteSpace(q)) return;
+        NavigateRequested?.Invoke("https://www.google.com/search?q=" + Uri.EscapeDataString($"VMware build {q} version release"));
+    }
+
     /// <summary>Open the Broadcom "build numbers and versions" KB pages in the browser.</summary>
     [RelayCommand]
     private void OpenBroadcomKb()

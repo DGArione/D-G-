@@ -31,4 +31,10 @@ public sealed partial class BrowserTabViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isPrivate;
+
+    [ObservableProperty]
+    private bool _isNewTab;
+
+    [ObservableProperty]
+    private string? _faviconUrl;
 }

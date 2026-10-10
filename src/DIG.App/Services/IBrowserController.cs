@@ -19,6 +19,7 @@ public interface IBrowserController
     void ZoomOut();
     void ZoomReset();
     void FocusAddressBar();
+    void FindInPage(string text, bool forward);
 
     /// <summary>Opens each URL as a new tab (used by Workspaces).</summary>
     void OpenTabs(IEnumerable<string> urls);
