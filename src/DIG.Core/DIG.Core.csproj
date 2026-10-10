@@ -13,4 +13,9 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Allow the test project to exercise internal helpers (payload/response parsing). -->
+    <InternalsVisibleTo Include="DIG.Tests" />
+  </ItemGroup>
+
 </Project>
