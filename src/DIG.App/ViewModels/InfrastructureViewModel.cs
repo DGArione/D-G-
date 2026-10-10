@@ -45,8 +45,9 @@ public sealed partial class InfrastructureViewModel : ObservableObject
 
     partial void OnSearchTermChanged(string value) => Reload();
 
-    partial void OnSelectedAssetChanged(InfrastructureAsset? a)
+    partial void OnSelectedAssetChanged(InfrastructureAsset? value)
     {
+        var a = value;
         if (a is null) return;
         EditName = a.Name;
         EditIp = a.Ip ?? "";

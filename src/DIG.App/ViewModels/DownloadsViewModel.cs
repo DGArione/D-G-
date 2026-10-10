@@ -31,14 +31,14 @@ public sealed partial class DownloadItem : ObservableObject
 
     private void Update()
     {
-        var recv = _op.BytesReceived;
+        double recv = _op.BytesReceived;
         var total = _op.TotalBytesToReceive;
-        Progress = total is long t && t > 0 ? Math.Clamp(recv / (double)t, 0, 1) : 0;
+        Progress = total is ulong t && t > 0 ? Math.Clamp(recv / t, 0, 1) : 0;
 
         switch (_op.State)
         {
             case CoreWebView2DownloadState.InProgress:
-                Status = total is long tt && tt > 0
+                Status = total is ulong tt && tt > 0
                     ? $"{recv / 1048576.0:0.0} / {tt / 1048576.0:0.0} MB"
                     : $"{recv / 1048576.0:0.0} MB";
                 IsComplete = false;
