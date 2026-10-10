@@ -51,6 +51,7 @@ public sealed partial class EmailTemplatesViewModel : ObservableObject
     [ObservableProperty] private string _editBody = string.Empty;
     [ObservableProperty] private WritingTone _selectedTone = WritingTone.Professional;
     [ObservableProperty] private string _extraContext = string.Empty;
+    [ObservableProperty] private string _conversation = string.Empty;
     [ObservableProperty] private string _draftOutput = string.Empty;
     [ObservableProperty] private string _status = string.Empty;
 
@@ -155,7 +156,8 @@ public sealed partial class EmailTemplatesViewModel : ObservableObject
         try
         {
             var result = await _ai.DraftEmailAsync(CurrentEdited(), Values(), SelectedTone,
-                string.IsNullOrWhiteSpace(ExtraContext) ? null : ExtraContext);
+                string.IsNullOrWhiteSpace(ExtraContext) ? null : ExtraContext,
+                string.IsNullOrWhiteSpace(Conversation) ? null : Conversation);
             if (result.Success)
             {
                 DraftOutput = result.Text;

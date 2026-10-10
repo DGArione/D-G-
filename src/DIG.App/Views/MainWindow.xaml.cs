@@ -229,6 +229,25 @@ public partial class MainWindow : Window, IBrowserController
         catch (Exception ex) { _logger.LogWarning(ex, "Navigation failed for {Url}", target); }
     }
 
+    public string? ActiveUrl => _vm.ActiveTab?.Url;
+
+    public async Task<string?> ExecuteScriptOnActiveTabAsync(string script)
+    {
+        if (_vm.ActiveTab is null
+            || !_views.TryGetValue(_vm.ActiveTab.Id, out var wv)
+            || wv.CoreWebView2 is null)
+            return null;
+        try
+        {
+            return await wv.CoreWebView2.ExecuteScriptAsync(script);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "ExecuteScript failed");
+            return null;
+        }
+    }
+
     public void Back() => WithActiveCore(c => { if (c.CanGoBack) c.GoBack(); });
     public void Forward() => WithActiveCore(c => { if (c.CanGoForward) c.GoForward(); });
     public void Reload() => WithActiveCore(c => c.Reload());

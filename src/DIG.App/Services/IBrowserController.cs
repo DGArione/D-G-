@@ -17,6 +17,14 @@ public interface IBrowserController
     void NavigateFromOmnibox(string text);
 
     void NavigateActive(string url);
+
+    /// <summary>Runs JavaScript in the active tab and returns the JSON-encoded result
+    /// (or null if there is no active tab). Used to import data from a rendered page.</summary>
+    Task<string?> ExecuteScriptOnActiveTabAsync(string script);
+
+    /// <summary>The active tab's current URL, or null.</summary>
+    string? ActiveUrl { get; }
+
     void Back();
     void Forward();
     void Reload();

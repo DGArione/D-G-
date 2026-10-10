@@ -24,9 +24,14 @@ public class VmwareBuildLookupTests
         var result = await Service().LookupAsync("20513097");
         Assert.Equal(MatchConfidence.Possible, result.Confidence);
         Assert.Equal("VMware ESXi", result.Product);
-        Assert.Equal("8.0", result.Version);
-        // Bundled data must not assert a release date it does not have.
-        Assert.Null(result.ReleaseDate);
+        Assert.Contains("8.0", result.Version);
+    }
+
+    [Fact]
+    public void Bundled_Index_Has_Many_Entries()
+    {
+        var index = new LocalIndexBuildSource();
+        Assert.True(index.Count >= 30, $"expected a sizeable bundled index, got {index.Count}");
     }
 
     [Fact]

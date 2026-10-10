@@ -72,6 +72,7 @@ public partial class App : Application
         services.AddSingleton<BookmarkRepository>();
         services.AddSingleton<HistoryRepository>();
         services.AddSingleton<EmailTemplateRepository>();
+        services.AddSingleton<BuildCacheRepository>();
 
         // Security
         services.AddSingleton<ISecretStore>(_ => new DpapiSecretStore());
@@ -84,8 +85,15 @@ public partial class App : Application
         services.AddSingleton<IAiProvider, GeminiAiProvider>();
         services.AddSingleton<AiService>();
 
-        // VMware build lookup (source-adapter architecture)
-        services.AddSingleton<IBuildSource, UnconfiguredAuthoritativeSource>();
+        // VMware build lookup (source-adapter architecture). Order matters: the
+        // authoritative browser-imported source is consulted first (Verified),
+        // then CSV imports and the bundled index (Possible).
+        services.AddSingleton<IBuildSource>(sp => new CachedBuildSource(
+            sp.GetRequiredService<BuildCacheRepository>(), "browser-import",
+            "Imported from a Broadcom page (browser)", authoritative: true));
+        services.AddSingleton<IBuildSource>(sp => new CachedBuildSource(
+            sp.GetRequiredService<BuildCacheRepository>(), "csv",
+            "Imported from CSV", authoritative: false));
         services.AddSingleton<IBuildSource, LocalIndexBuildSource>();
         services.AddSingleton<VmwareBuildLookupService>();
 

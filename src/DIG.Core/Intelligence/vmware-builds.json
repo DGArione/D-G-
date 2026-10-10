@@ -1,0 +1,52 @@
+[
+  { "product": "VMware ESXi", "version": "ESXi 8.0 GA",      "build": "20513097", "releaseDate": "2022-10-11", "releaseName": "ESXi 8.0 GA" },
+  { "product": "VMware ESXi", "version": "ESXi 8.0a",         "build": "20842819", "releaseDate": "2022-12-08", "releaseName": "ESXi 8.0a" },
+  { "product": "VMware ESXi", "version": "ESXi 8.0b",         "build": "21203435", "releaseDate": "2023-02-14", "releaseName": "ESXi 8.0b" },
+  { "product": "VMware ESXi", "version": "ESXi 8.0 U1",       "build": "21495797", "releaseDate": "2023-04-18", "releaseName": "ESXi 8.0 Update 1" },
+  { "product": "VMware ESXi", "version": "ESXi 8.0 U1a",      "build": "21813344", "releaseDate": "2023-06-01", "releaseName": "ESXi 8.0 Update 1a" },
+  { "product": "VMware ESXi", "version": "ESXi 8.0 U1c",      "build": "22088125", "releaseDate": "2023-07-27", "releaseName": "ESXi 8.0 Update 1c" },
+  { "product": "VMware ESXi", "version": "ESXi 8.0 U2",       "build": "22380479", "releaseDate": "2023-09-21", "releaseName": "ESXi 8.0 Update 2" },
+  { "product": "VMware ESXi", "version": "ESXi 8.0 U2b",      "build": "23305546", "releaseDate": "2023-12-05", "releaseName": "ESXi 8.0 Update 2b" },
+  { "product": "VMware ESXi", "version": "ESXi 8.0 U2c",      "build": "23825572", "releaseDate": "2024-05-21", "releaseName": "ESXi 8.0 Update 2c" },
+  { "product": "VMware ESXi", "version": "ESXi 8.0 U3",       "build": "24022510", "releaseDate": "2024-06-25", "releaseName": "ESXi 8.0 Update 3" },
+
+  { "product": "VMware ESXi", "version": "ESXi 7.0 GA",       "build": "15843807", "releaseDate": "2020-04-02", "releaseName": "ESXi 7.0 GA" },
+  { "product": "VMware ESXi", "version": "ESXi 7.0b",         "build": "16324942", "releaseDate": "2020-06-23", "releaseName": "ESXi 7.0b" },
+  { "product": "VMware ESXi", "version": "ESXi 7.0 U1",       "build": "16850804", "releaseDate": "2020-10-06", "releaseName": "ESXi 7.0 Update 1" },
+  { "product": "VMware ESXi", "version": "ESXi 7.0 U2",       "build": "17630552", "releaseDate": "2021-03-09", "releaseName": "ESXi 7.0 Update 2" },
+  { "product": "VMware ESXi", "version": "ESXi 7.0 U2a",      "build": "17867351", "releaseDate": "2021-04-29", "releaseName": "ESXi 7.0 Update 2a" },
+  { "product": "VMware ESXi", "version": "ESXi 7.0 U3",       "build": "18644231", "releaseDate": "2021-10-05", "releaseName": "ESXi 7.0 Update 3" },
+  { "product": "VMware ESXi", "version": "ESXi 7.0 U3c",      "build": "19193900", "releaseDate": "2022-01-27", "releaseName": "ESXi 7.0 Update 3c" },
+  { "product": "VMware ESXi", "version": "ESXi 7.0 U3d",      "build": "19482537", "releaseDate": "2022-03-29", "releaseName": "ESXi 7.0 Update 3d" },
+
+  { "product": "VMware ESXi", "version": "ESXi 6.7 GA",       "build": "8169922",  "releaseDate": "2018-04-17", "releaseName": "ESXi 6.7 GA" },
+  { "product": "VMware ESXi", "version": "ESXi 6.7 U1",       "build": "10302608", "releaseDate": "2018-10-16", "releaseName": "ESXi 6.7 Update 1" },
+  { "product": "VMware ESXi", "version": "ESXi 6.7 U2",       "build": "13006603", "releaseDate": "2019-04-11", "releaseName": "ESXi 6.7 Update 2" },
+  { "product": "VMware ESXi", "version": "ESXi 6.7 U3",       "build": "14320388", "releaseDate": "2019-08-20", "releaseName": "ESXi 6.7 Update 3" },
+
+  { "product": "VMware ESXi", "version": "ESXi 6.5 GA",       "build": "4564106",  "releaseDate": "2016-11-15", "releaseName": "ESXi 6.5 GA" },
+  { "product": "VMware ESXi", "version": "ESXi 6.5 U1",       "build": "5969303",  "releaseDate": "2017-07-27", "releaseName": "ESXi 6.5 Update 1" },
+  { "product": "VMware ESXi", "version": "ESXi 6.5 U2",       "build": "8294253",  "releaseDate": "2018-05-03", "releaseName": "ESXi 6.5 Update 2" },
+  { "product": "VMware ESXi", "version": "ESXi 6.5 U3",       "build": "14320405", "releaseDate": "2019-07-02", "releaseName": "ESXi 6.5 Update 3" },
+
+  { "product": "VMware vCenter Server", "version": "vCenter 8.0 GA",   "build": "20519528", "releaseDate": "2022-10-11", "releaseName": "vCenter Server 8.0 GA" },
+  { "product": "VMware vCenter Server", "version": "vCenter 8.0a",     "build": "20920323", "releaseDate": "2022-12-08", "releaseName": "vCenter Server 8.0a" },
+  { "product": "VMware vCenter Server", "version": "vCenter 8.0 U1",   "build": "21560480", "releaseDate": "2023-04-18", "releaseName": "vCenter Server 8.0 Update 1" },
+  { "product": "VMware vCenter Server", "version": "vCenter 8.0 U2",   "build": "22385739", "releaseDate": "2023-09-21", "releaseName": "vCenter Server 8.0 Update 2" },
+  { "product": "VMware vCenter Server", "version": "vCenter 8.0 U3",   "build": "24022515", "releaseDate": "2024-06-25", "releaseName": "vCenter Server 8.0 Update 3" },
+
+  { "product": "VMware vCenter Server", "version": "vCenter 7.0 GA",   "build": "15952498", "releaseDate": "2020-04-02", "releaseName": "vCenter Server 7.0 GA" },
+  { "product": "VMware vCenter Server", "version": "vCenter 7.0 U1",   "build": "16860138", "releaseDate": "2020-10-06", "releaseName": "vCenter Server 7.0 Update 1" },
+  { "product": "VMware vCenter Server", "version": "vCenter 7.0 U2",   "build": "17694817", "releaseDate": "2021-03-09", "releaseName": "vCenter Server 7.0 Update 2" },
+  { "product": "VMware vCenter Server", "version": "vCenter 7.0 U3",   "build": "18700403", "releaseDate": "2021-10-05", "releaseName": "vCenter Server 7.0 Update 3" },
+
+  { "product": "VMware vCenter Server", "version": "vCenter 6.7 GA",   "build": "8217866",  "releaseDate": "2018-04-17", "releaseName": "vCenter Server 6.7 GA" },
+  { "product": "VMware vCenter Server", "version": "vCenter 6.7 U1",   "build": "10244745", "releaseDate": "2018-10-16", "releaseName": "vCenter Server 6.7 Update 1" },
+  { "product": "VMware vCenter Server", "version": "vCenter 6.7 U2",   "build": "13010631", "releaseDate": "2019-04-11", "releaseName": "vCenter Server 6.7 Update 2" },
+  { "product": "VMware vCenter Server", "version": "vCenter 6.7 U3",   "build": "14367737", "releaseDate": "2019-08-20", "releaseName": "vCenter Server 6.7 Update 3" },
+
+  { "product": "VMware vCenter Server", "version": "vCenter 6.5 GA",   "build": "4602587",  "releaseDate": "2016-11-15", "releaseName": "vCenter Server 6.5 GA" },
+  { "product": "VMware vCenter Server", "version": "vCenter 6.5 U1",   "build": "5973321",  "releaseDate": "2017-07-27", "releaseName": "vCenter Server 6.5 Update 1" },
+  { "product": "VMware vCenter Server", "version": "vCenter 6.5 U2",   "build": "8307201",  "releaseDate": "2018-05-03", "releaseName": "vCenter Server 6.5 Update 2" },
+  { "product": "VMware vCenter Server", "version": "vCenter 6.5 U3",   "build": "14020092", "releaseDate": "2019-07-02", "releaseName": "vCenter Server 6.5 Update 3" }
+]

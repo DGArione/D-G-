@@ -8,7 +8,10 @@
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         Background="{DynamicResource Brush.Obsidian}"
-        Foreground="{DynamicResource Brush.TextPrimary}">
+        Foreground="{DynamicResource Brush.TextPrimary}"
+        FontFamily="{DynamicResource Font.Ui}"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="ClearType">
 
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="34" ResizeBorderThickness="6" CornerRadius="0" GlassFrameThickness="0" />

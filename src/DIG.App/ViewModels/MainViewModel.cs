@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DIG.App.Services;
+using DIG.Core.Data;
+using DIG.Core.Intelligence;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DIG.App.ViewModels;
@@ -106,7 +108,7 @@ public sealed partial class MainViewModel : ObservableObject
             ModuleId.AiAssistant => _sp.GetRequiredService<AiAssistantViewModel>(),
             ModuleId.Settings => CreateSettings(),
             ModuleId.EmailTemplates => _sp.GetRequiredService<EmailTemplatesViewModel>(),
-            ModuleId.BuildLookup => CreateWithNavigation(_sp.GetRequiredService<BuildLookupViewModel>(), v => ((BuildLookupViewModel)v).NavigateRequested += OpenInBrowser),
+            ModuleId.BuildLookup => CreateBuildLookup(),
             ModuleId.Bookmarks => CreateWithNavigation(_sp.GetRequiredService<BookmarksViewModel>(), v => ((BookmarksViewModel)v).NavigateRequested += OpenInBrowser),
             ModuleId.History => CreateWithNavigation(_sp.GetRequiredService<HistoryViewModel>(), v => ((HistoryViewModel)v).NavigateRequested += OpenInBrowser),
             _ => new PlaceholderViewModel(
@@ -124,6 +126,58 @@ public sealed partial class MainViewModel : ObservableObject
         var settings = _sp.GetRequiredService<SettingsViewModel>();
         settings.SettingsChanged += OnSettingsChanged;
         return settings;
+    }
+
+    private object CreateBuildLookup()
+    {
+        var vm = _sp.GetRequiredService<BuildLookupViewModel>();
+        vm.NavigateRequested += OpenInBrowser;
+        vm.ImportFromPageRequested += () => _ = ImportBuildsFromPageAsync(vm);
+        return vm;
+    }
+
+    private async Task ImportBuildsFromPageAsync(BuildLookupViewModel vm)
+    {
+        if (Browser is null)
+        {
+            vm.OnPageImported(0, "Browser is not ready yet.");
+            return;
+        }
+
+        const string script =
+            "(function(){var o=[];document.querySelectorAll('table tr').forEach(function(tr){" +
+            "var c=[];tr.querySelectorAll('th,td').forEach(function(x){c.push((x.innerText||'').trim());});" +
+            "if(c.length)o.push(c);});return o;})()";
+
+        var json = await Browser.ExecuteScriptOnActiveTabAsync(script);
+        if (string.IsNullOrWhiteSpace(json) || json == "null")
+        {
+            vm.OnPageImported(0, "No active browser page to read. Open a Broadcom build-numbers KB page first.");
+            return;
+        }
+
+        try
+        {
+            var rows = System.Text.Json.JsonSerializer.Deserialize<List<List<string>>>(json) ?? new();
+            var arrays = rows.Select(r => r.ToArray());
+            var records = BroadcomTableParser.ParseRows(arrays, GuessProduct(Browser.ActiveUrl));
+            var cache = _sp.GetRequiredService<BuildCacheRepository>();
+            var n = cache.AddRange(records, "browser-import", "Verified", Browser.ActiveUrl);
+            vm.OnPageImported(n, null);
+        }
+        catch (Exception ex)
+        {
+            vm.OnPageImported(0, "Could not read the page tables: " + ex.Message);
+        }
+    }
+
+    private static string? GuessProduct(string? url)
+    {
+        if (string.IsNullOrEmpty(url)) return null;
+        var u = url.ToLowerInvariant();
+        if (u.Contains("vce") || u.Contains("vcenter")) return "VMware vCenter Server";
+        if (u.Contains("esx")) return "VMware ESXi";
+        return null;
     }
 
     private static object CreateWithNavigation(object vm, Action<object> wire)

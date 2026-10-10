@@ -34,8 +34,10 @@ updated with each increment and is the source of truth over any marketing copy.
 | Build Lookup module | ✅ | normalize, lookup, confidence |
 | Source-adapter architecture | ✅ | `IBuildSource` (bundled + authoritative slot) |
 | Verified/Possible/Unknown confidence | ✅ | bundled data is never "Verified" |
-| Bundled offline index | 🟡 | small, conservative seed set |
-| Live authoritative source | ⬜ | slot exists; must honour vendor access/robots/licensing |
+| Bundled offline index | ✅ | curated ESXi + vCenter GA/update builds (embedded JSON) |
+| Import from Broadcom page (browser) | ✅ | scrapes the rendered KB table from the active tab → Verified, cached |
+| Import from CSV | ✅ | load the exact vendor table yourself |
+| Live authoritative source | ✅ | via browser-import (SPA-safe); server-side scrape not used |
 | Recent lookups | ✅ | in session; pinning/persistent cache planned |
 
 ## AI (spec §12)
@@ -48,6 +50,7 @@ updated with each increment and is the source of truth over any marketing copy.
 | AI chat assistant | ✅ | |
 | Email templates (user-editable) | ✅ | CRUD + built-ins |
 | AI draft from template for current case | ✅ | drafts only; never auto-sends |
+| Reply using pasted email thread (your + customer emails) | ✅ | AI uses the conversation as context |
 | Writing tones | ✅ | professional/concise/customer-friendly/technical |
 | Local model option / Outlook integration | ⬜ | planned |
 

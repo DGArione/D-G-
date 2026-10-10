@@ -66,9 +66,10 @@ public sealed class AiService
         IReadOnlyDictionary<string, string> values,
         WritingTone tone,
         string? context,
+        string? conversation = null,
         CancellationToken ct = default)
     {
-        var prompt = AiPrompts.BuildEmailFromTemplate(template, values, tone, context);
+        var prompt = AiPrompts.BuildEmailFromTemplate(template, values, tone, context, conversation);
         return SinglePromptAsync(prompt, ct);
     }
 }

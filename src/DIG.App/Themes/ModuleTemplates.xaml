@@ -207,6 +207,12 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
+                    <TextBlock Text="Previous emails / conversation (paste your and the customer's earlier messages — the AI uses this to reply in context)"
+                               Style="{DynamicResource Text.Section}" />
+                    <TextBox Text="{Binding Conversation}" AcceptsReturn="True" TextWrapping="Wrap" Height="120"
+                             VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top"
+                             FontFamily="{DynamicResource Font.Mono}" />
+
                     <TextBlock Text="Extra context for the AI (optional — e.g. notes about the current case)"
                                Style="{DynamicResource Text.Section}" />
                     <TextBox Text="{Binding ExtraContext}" AcceptsReturn="True" TextWrapping="Wrap" Height="60"
@@ -245,14 +251,23 @@
 
             <TextBlock Grid.Row="0" Text="VMware Build Lookup" Style="{DynamicResource Text.Heading}" Margin="0,0,0,8" />
 
-            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
-                <TextBox Width="300" Text="{Binding Query, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center">
-                    <TextBox.InputBindings>
-                        <KeyBinding Key="Return" Command="{Binding LookupCommand}" />
-                    </TextBox.InputBindings>
-                </TextBox>
-                <Button Content="Identify build" Margin="8,0,0,0" Style="{DynamicResource AccentButton}" Command="{Binding LookupCommand}" />
-                <TextBlock Text="{Binding Status}" Style="{DynamicResource Text.Secondary}" Margin="12,0,0,0" VerticalAlignment="Center" />
+            <StackPanel Grid.Row="1" Margin="0,0,0,12">
+                <StackPanel Orientation="Horizontal">
+                    <TextBox Width="300" Text="{Binding Query, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Return" Command="{Binding LookupCommand}" />
+                        </TextBox.InputBindings>
+                    </TextBox>
+                    <Button Content="Identify build" Margin="8,0,0,0" Style="{DynamicResource AccentButton}" Command="{Binding LookupCommand}" />
+                    <TextBlock Text="{Binding Status}" Style="{DynamicResource Text.Secondary}" Margin="12,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="420" />
+                </StackPanel>
+                <WrapPanel Margin="0,8,0,0">
+                    <Button Content="Open Broadcom KB" Margin="0,0,8,6" Style="{DynamicResource SubtleButton}" Command="{Binding OpenBroadcomKbCommand}" />
+                    <Button Content="Import from current page" Margin="0,0,8,6" Style="{DynamicResource SubtleButton}" Command="{Binding ImportFromPageCommand}" />
+                    <Button Content="Import CSV…" Margin="0,0,8,6" Style="{DynamicResource SubtleButton}" Command="{Binding ImportCsvCommand}" />
+                    <Button Content="Clear imported" Margin="0,0,8,6" Style="{DynamicResource SubtleButton}" Command="{Binding ClearImportedCommand}" />
+                </WrapPanel>
+                <TextBlock Text="{Binding SourceInfo}" Style="{DynamicResource Text.Secondary}" Margin="0,2,0,0" TextWrapping="Wrap" />
             </StackPanel>
 
             <Border Grid.Row="2" Style="{DynamicResource Card}" Visibility="{Binding Result, Converter={StaticResource M.NullToVis}}">

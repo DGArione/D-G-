@@ -15,10 +15,12 @@
     <conv:NullToVisibilityConverter x:Key="NullToVis" />
     <conv:StringToVisibilityConverter x:Key="StringToVis" />
 
-    <!-- Implicit text -->
+    <!-- Implicit text. NOTE: deliberately does NOT set FontFamily. A FontFamily
+         setter here would override the icon font that glyph buttons inherit via
+         their ContentPresenter, turning Segoe MDL2 icons into empty boxes. The
+         UI font is applied at the Window level and inherited instead. -->
     <Style TargetType="TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
-        <Setter Property="FontFamily" Value="{DynamicResource Font.Ui}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="TextWrapping" Value="NoWrap" />
     </Style>
