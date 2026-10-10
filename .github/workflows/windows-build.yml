@@ -3,11 +3,12 @@ name: Windows build
 on:
   push:
     branches: [ "**" ]
+    tags: [ "v*" ]
   pull_request:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -29,7 +30,14 @@ jobs:
       - name: Compute version
         id: ver
         shell: pwsh
-        run: echo "version=0.1.$env:GITHUB_RUN_NUMBER" >> $env:GITHUB_OUTPUT
+        run: |
+          if ($env:GITHUB_REF -like 'refs/tags/*') {
+            $v = $env:GITHUB_REF_NAME -replace '^v',''
+          } else {
+            $v = "0.1.$env:GITHUB_RUN_NUMBER"
+          }
+          echo "version=$v" >> $env:GITHUB_OUTPUT
+          echo "D!G! version $v"
 
       - name: Restore
         run: dotnet restore DIG.sln
@@ -43,6 +51,12 @@ jobs:
       - name: Publish (self-contained single-file exe)
         shell: pwsh
         run: ./build/publish.ps1 -Configuration Release -Version ${{ steps.ver.outputs.version }} -Output artifacts/app
+
+      - name: Package portable zip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+          Compress-Archive -Path artifacts/app/* -DestinationPath "artifacts/DIG-${{ steps.ver.outputs.version }}-portable-win-x64.zip" -Force
 
       - name: Install Inno Setup
         run: choco install innosetup --no-progress -y
@@ -72,3 +86,23 @@ jobs:
         with:
           name: test-results-${{ steps.ver.outputs.version }}
           path: "**/test-results.trx"
+
+      # ---- Release (only when a v* tag is pushed) ----
+      - name: Create GitHub Release with downloads
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2.0.8
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: D!G! ${{ steps.ver.outputs.version }}
+          body: |
+            D!G! Infrastructure Browser ${{ steps.ver.outputs.version }}
+
+            **Downloads (Windows 10/11, 64-bit):**
+            - `DIG-Setup-${{ steps.ver.outputs.version }}.exe` — installer (per-user, no admin needed).
+            - `DIG-${{ steps.ver.outputs.version }}-portable-win-x64.zip` — portable; unzip and run `D!G!.exe`.
+
+            Requires the Microsoft Edge WebView2 Runtime (bundled on Windows 11 / most Windows 10).
+            The build is not code-signed yet, so SmartScreen may warn — choose "More info -> Run anyway".
+          files: |
+            build/installer/Output/*.exe
+            artifacts/DIG-${{ steps.ver.outputs.version }}-portable-win-x64.zip
