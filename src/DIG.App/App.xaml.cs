@@ -75,6 +75,11 @@ public partial class App : Application
         services.AddSingleton<BuildCacheRepository>();
         services.AddSingleton<InfrastructureRepository>();
         services.AddSingleton<WorkspaceRepository>();
+        services.AddSingleton<TaskRepository>();
+        services.AddSingleton<NoteRepository>();
+        services.AddSingleton<CalendarRepository>();
+        services.AddSingleton<SshProfileRepository>();
+        services.AddSingleton<KbRepository>();
 
         // Security
         services.AddSingleton<ISecretStore>(_ => new DpapiSecretStore());
@@ -110,6 +115,10 @@ public partial class App : Application
         services.AddTransient<HistoryViewModel>();
         services.AddTransient<InfrastructureViewModel>();
         services.AddTransient<WorkspacesViewModel>();
+        services.AddTransient<TasksViewModel>();
+        services.AddTransient<CalendarViewModel>();
+        services.AddTransient<SshViewModel>();
+        services.AddTransient<KnowledgeBaseViewModel>();
 
         // Window
         services.AddSingleton<MainWindow>();

@@ -90,6 +90,18 @@ public sealed class AppSettingsService
         set => _settings.Set("ai_enabled", value ? "true" : "false");
     }
 
+    public bool BlockTrackers
+    {
+        get => _settings.Get("block_trackers", "true") == "true";
+        set => _settings.Set("block_trackers", value ? "true" : "false");
+    }
+
+    public bool HttpsOnly
+    {
+        get => _settings.Get("https_only", "false") == "true";
+        set => _settings.Set("https_only", value ? "true" : "false");
+    }
+
     // ---- Secret: Gemini API key ----
 
     public bool HasGeminiApiKey => _secrets.Exists(GeminiKeyName)

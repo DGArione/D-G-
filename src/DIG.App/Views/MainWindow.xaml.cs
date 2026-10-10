@@ -153,6 +153,17 @@ public partial class MainWindow : Window, IBrowserController
 
         wv.NavigationStarting += (_, e) =>
         {
+            // HTTPS-only: upgrade plain-http navigations (except localhost) when enabled.
+            if (_settings.HttpsOnly
+                && e.Uri.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                && !e.Uri.StartsWith("http://localhost", StringComparison.OrdinalIgnoreCase))
+            {
+                e.Cancel = true;
+                var https = "https://" + e.Uri["http://".Length..];
+                Dispatcher.BeginInvoke(() => { try { wv.CoreWebView2?.Navigate(https); } catch { } });
+                return;
+            }
+
             // about:blank is only used to prime a new-tab's WebView; keep the start page.
             if (string.Equals(e.Uri, "about:blank", StringComparison.OrdinalIgnoreCase)) return;
             tab.IsNewTab = false;
@@ -215,6 +226,23 @@ public partial class MainWindow : Window, IBrowserController
         {
             try { _downloads.Track(e.DownloadOperation); } catch (Exception ex) { _logger.LogWarning(ex, "download track"); }
         };
+
+        // Ad / tracker blocking: drop sub-resource requests to known tracker domains.
+        try
+        {
+            core.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All);
+            core.WebResourceRequested += (_, e) =>
+            {
+                if (!_settings.BlockTrackers) return;
+                var host = DIG.Core.Security.TrackerBlocklist.HostOf(e.Request.Uri);
+                if (DIG.Core.Security.TrackerBlocklist.IsBlocked(host))
+                {
+                    try { e.Response = core.Environment.CreateWebResourceResponse(null, 403, "Blocked by D!G!", ""); }
+                    catch { /* ignore */ }
+                }
+            };
+        }
+        catch (Exception ex) { _logger.LogWarning(ex, "resource filter"); }
 
         core.ContextMenuRequested += OnContextMenuRequested;
     }

@@ -115,6 +115,12 @@
                     <TextBox Width="360" Text="{Binding Homepage}" />
                 </StackPanel>
 
+                <TextBlock Text="Privacy &amp; safety" Style="{DynamicResource Text.Section}" />
+                <CheckBox Content="Block ads &amp; trackers (drops known tracker/ad requests)" IsChecked="{Binding BlockTrackers}" Margin="0,0,0,6" />
+                <CheckBox Content="HTTPS-only — upgrade insecure http:// pages to https:// (except localhost)" IsChecked="{Binding HttpsOnly}" />
+                <TextBlock Text="SmartScreen reputation and TLS certificate validation stay on. Private browsing is isolation, not anonymity."
+                           Style="{DynamicResource Text.Secondary}" Margin="0,6,0,0" TextWrapping="Wrap" MaxWidth="560" />
+
                 <TextBlock Text="AI (Google Gemini)" Style="{DynamicResource Text.Section}" />
                 <CheckBox Content="Enable AI features" IsChecked="{Binding AiEnabled}" Margin="0,0,0,8" />
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -685,6 +691,246 @@
                     </ItemsControl>
                 </ScrollViewer>
             </Border>
+        </Grid>
+    </DataTemplate>
+
+    <!-- ============================ TASKS & NOTES ============================ -->
+    <DataTemplate DataType="{x:Type vm:TasksViewModel}">
+        <Grid Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Tasks &amp; Notes" Style="{DynamicResource Text.Heading}" Margin="0,0,0,10" />
+
+            <!-- Tasks -->
+            <DockPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBox Width="200" Text="{Binding NewTaskTitle, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center">
+                        <TextBox.InputBindings><KeyBinding Key="Return" Command="{Binding AddTaskCommand}" /></TextBox.InputBindings>
+                    </TextBox>
+                    <ComboBox Width="90" Margin="6,0,0,0" ItemsSource="{Binding Priorities}" SelectedItem="{Binding NewTaskPriority}" />
+                    <Button Content="Add" Margin="6,0,0,0" Style="{DynamicResource AccentButton}" Command="{Binding AddTaskCommand}" />
+                </StackPanel>
+                <Border Style="{DynamicResource Card}" Padding="4">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Tasks}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="4,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox Grid.Column="0" IsChecked="{Binding Done, Mode=OneWay}"
+                                                  Command="{Binding DataContext.ToggleDoneCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                  CommandParameter="{Binding}" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="8,0,0,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Grid.Column="2" Text="{Binding Priority}" Style="{DynamicResource Text.Secondary}" VerticalAlignment="Center" Margin="8,0" />
+                                        <Button Grid.Column="3" Content="&#xE74D;" ToolTip="Delete" Style="{DynamicResource ToolbarButton}" Width="22" Height="22" FontSize="11"
+                                                Command="{Binding DataContext.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </DockPanel>
+
+            <!-- Notes -->
+            <DockPanel Grid.Row="1" Grid.Column="1">
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="Notes" Style="{DynamicResource Text.Section}" Margin="0" VerticalAlignment="Center" />
+                    <Button Content="New" Margin="10,0,0,0" Style="{DynamicResource SubtleButton}" Command="{Binding NewNoteCommand}" />
+                    <Button Content="Save" Margin="6,0,0,0" Style="{DynamicResource AccentButton}" Command="{Binding SaveNoteCommand}" />
+                    <Button Content="Delete" Margin="6,0,0,0" Style="{DynamicResource SubtleButton}" Command="{Binding DeleteNoteCommand}" />
+                </StackPanel>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="120" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Border Grid.Row="0" Style="{DynamicResource Card}" Padding="4" Margin="0,0,0,8">
+                        <ListBox ItemsSource="{Binding Notes}" SelectedItem="{Binding SelectedNote}" Background="Transparent" BorderThickness="0"
+                                 DisplayMemberPath="Title" />
+                    </Border>
+                    <TextBox Grid.Row="1" Text="{Binding EditNoteTitle}" Margin="0,0,0,6" />
+                    <TextBox Grid.Row="2" Text="{Binding EditNoteBody}" AcceptsReturn="True" TextWrapping="Wrap"
+                             VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" />
+                </Grid>
+            </DockPanel>
+        </Grid>
+    </DataTemplate>
+
+    <!-- ============================ CALENDAR ============================ -->
+    <DataTemplate DataType="{x:Type vm:CalendarViewModel}">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" Text="Calendar &amp; Shifts" Style="{DynamicResource Text.Heading}" Margin="0,0,0,10" />
+            <WrapPanel Grid.Row="1" Margin="0,0,0,12">
+                <TextBox Width="220" Text="{Binding NewTitle, UpdateSourceTrigger=PropertyChanged}" ToolTip="Title" Margin="0,0,8,6" VerticalContentAlignment="Center" />
+                <DatePicker SelectedDate="{Binding NewDate}" Margin="0,0,8,6" />
+                <TextBox Width="70" Text="{Binding NewStart}" ToolTip="Start (HH:mm)" Margin="0,0,8,6" VerticalContentAlignment="Center" />
+                <TextBox Width="70" Text="{Binding NewEnd}" ToolTip="End (HH:mm)" Margin="0,0,8,6" VerticalContentAlignment="Center" />
+                <ComboBox Width="110" ItemsSource="{Binding Kinds}" SelectedItem="{Binding NewKind}" Margin="0,0,8,6" />
+                <Button Content="Add" Style="{DynamicResource AccentButton}" Command="{Binding AddEventCommand}" Margin="0,0,8,6" />
+                <TextBlock Text="{Binding Status}" Style="{DynamicResource Text.Secondary}" VerticalAlignment="Center" />
+            </WrapPanel>
+            <Border Grid.Row="2" Style="{DynamicResource Card}" Padding="4">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Events}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="4,3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Style="{DynamicResource Pill}" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Kind}" FontSize="11" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                        <TextBlock Text="{Binding Title}" />
+                                        <TextBlock Text="{Binding When}" Style="{DynamicResource Text.Secondary}" />
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Content="Delete" Style="{DynamicResource SubtleButton}"
+                                            Command="{Binding DataContext.DeleteEventCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </DataTemplate>
+
+    <!-- ============================ SSH & REMOTE ============================ -->
+    <DataTemplate DataType="{x:Type vm:SshViewModel}">
+        <Grid Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="SSH &amp; Remote Access" Style="{DynamicResource Text.Heading}" Margin="0,0,0,10" />
+
+            <DockPanel Grid.Row="1" Grid.Column="0" Margin="0,0,14,0">
+                <Button DockPanel.Dock="Bottom" Content="New connection" Margin="0,8,0,0" Style="{DynamicResource SubtleButton}" Command="{Binding NewProfileCommand}" />
+                <Border Style="{DynamicResource Card}" Padding="4">
+                    <ListBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding Selected}" Background="Transparent" BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="{Binding Name}" />
+                                        <TextBlock Style="{DynamicResource Text.Secondary}">
+                                            <Run Text="{Binding Kind, Mode=OneWay}" /><Run Text="  " /><Run Text="{Binding Target, Mode=OneWay}" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Content="Connect" Style="{DynamicResource SubtleButton}"
+                                            Command="{Binding DataContext.ConnectCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+            </DockPanel>
+
+            <ScrollViewer Grid.Row="1" Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <TextBlock Text="Name" Width="90" VerticalAlignment="Center" />
+                        <TextBox Width="300" Text="{Binding EditName}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <TextBlock Text="Host" Width="90" VerticalAlignment="Center" />
+                        <TextBox Width="300" Text="{Binding EditHost}" FontFamily="{DynamicResource Font.Mono}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <TextBlock Text="Port" Width="90" VerticalAlignment="Center" />
+                        <TextBox Width="90" Text="{Binding EditPort}" />
+                        <TextBlock Text="Type" Width="50" Margin="20,0,0,0" VerticalAlignment="Center" />
+                        <ComboBox Width="110" ItemsSource="{Binding Kinds}" SelectedItem="{Binding EditKind}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <TextBlock Text="Username" Width="90" VerticalAlignment="Center" />
+                        <TextBox Width="220" Text="{Binding EditUsername}" />
+                    </StackPanel>
+                    <TextBlock Text="Notes" Margin="0,0,0,2" Style="{DynamicResource Text.Secondary}" />
+                    <TextBox Text="{Binding EditNotes}" AcceptsReturn="True" TextWrapping="Wrap" Height="70" VerticalContentAlignment="Top" />
+                    <WrapPanel Margin="0,10,0,0">
+                        <Button Content="Save" Style="{DynamicResource AccentButton}" Command="{Binding SaveCommand}" Margin="0,0,8,6" />
+                        <Button Content="Connect" Style="{DynamicResource SubtleButton}" Command="{Binding ConnectCommand}" Margin="0,0,8,6" />
+                        <Button Content="Delete" Style="{DynamicResource SubtleButton}" Command="{Binding DeleteCommand}" Margin="0,0,8,6" />
+                    </WrapPanel>
+                    <TextBlock Text="{Binding Status}" Style="{DynamicResource Text.Secondary}" Margin="0,8,0,0" />
+                    <TextBlock Text="Launches the system ssh / mstsc (RDP) client. Passwords are never stored — use SSH keys or the client's own prompt."
+                               Style="{DynamicResource Text.Secondary}" Margin="0,8,0,0" TextWrapping="Wrap" MaxWidth="520" />
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </DataTemplate>
+
+    <!-- ============================ KNOWLEDGE BASE ============================ -->
+    <DataTemplate DataType="{x:Type vm:KnowledgeBaseViewModel}">
+        <Grid Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Knowledge Base" Style="{DynamicResource Text.Heading}" Margin="0,0,0,10" />
+
+            <DockPanel Grid.Row="1" Grid.Column="0" Margin="0,0,14,0">
+                <TextBox DockPanel.Dock="Top" Margin="0,0,0,8" Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged}" ToolTip="Search title, content, tags" />
+                <Button DockPanel.Dock="Bottom" Content="New article" Margin="0,8,0,0" Style="{DynamicResource SubtleButton}" Command="{Binding NewEntryCommand}" />
+                <Border Style="{DynamicResource Card}" Padding="4">
+                    <ListBox ItemsSource="{Binding Entries}" SelectedItem="{Binding Selected}" Background="Transparent" BorderThickness="0" DisplayMemberPath="Title" />
+                </Border>
+            </DockPanel>
+
+            <ScrollViewer Grid.Row="1" Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBox Text="{Binding EditTitle}" FontSize="15" Margin="0,0,0,6" />
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <TextBox Width="260" Text="{Binding EditSource}" ToolTip="Source URL / reference" />
+                        <TextBox Width="200" Margin="8,0,0,0" Text="{Binding EditTags}" ToolTip="Tags (comma-separated)" />
+                    </StackPanel>
+                    <TextBox Text="{Binding EditContent}" AcceptsReturn="True" TextWrapping="Wrap" Height="320"
+                             VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" />
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <Button Content="Save" Style="{DynamicResource AccentButton}" Command="{Binding SaveCommand}" />
+                        <Button Content="Delete" Margin="8,0,0,0" Style="{DynamicResource SubtleButton}" Command="{Binding DeleteCommand}" />
+                        <TextBlock Text="{Binding Status}" Style="{DynamicResource Text.Secondary}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
         </Grid>
     </DataTemplate>
 

@@ -131,6 +131,59 @@ public static class DatabaseMigrator
             updated_utc TEXT NOT NULL
         );
         """,
+
+        // v3 — productivity, calendar, remote access, knowledge base
+        """
+        CREATE TABLE IF NOT EXISTS tasks (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            title       TEXT NOT NULL,
+            done        INTEGER NOT NULL DEFAULT 0,
+            priority    TEXT,
+            due_utc     TEXT,
+            tags        TEXT,
+            created_utc TEXT NOT NULL,
+            updated_utc TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS notes (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            title       TEXT NOT NULL,
+            body        TEXT,
+            tags        TEXT,
+            updated_utc TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS calendar_events (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            title       TEXT NOT NULL,
+            start_utc   TEXT NOT NULL,
+            end_utc     TEXT NOT NULL,
+            kind        TEXT,
+            color       TEXT,
+            notes       TEXT,
+            created_utc TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS ssh_profiles (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            name        TEXT NOT NULL,
+            host        TEXT NOT NULL,
+            port        INTEGER NOT NULL DEFAULT 22,
+            username    TEXT,
+            kind        TEXT NOT NULL DEFAULT 'ssh',
+            notes       TEXT,
+            updated_utc TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS kb_entries (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            title       TEXT NOT NULL,
+            content     TEXT,
+            source      TEXT,
+            tags        TEXT,
+            updated_utc TEXT NOT NULL
+        );
+        """,
     };
 
     /// <summary>Migrates the connection to the latest version; returns the new version.</summary>

@@ -97,12 +97,12 @@ public sealed partial class MainViewModel : ObservableObject
         new(ModuleId.Workspaces,     "Workspaces",      "", true),
         new(ModuleId.Infrastructure, "Infrastructure",  "", true),
         new(ModuleId.BuildLookup,    "VMware Builds",   "", true),
-        new(ModuleId.KnowledgeBase,  "Knowledge Base",  "", false),
+        new(ModuleId.KnowledgeBase,  "Knowledge Base",  "", true),
         new(ModuleId.AiAssistant,    "AI Assistant",    "", true),
         new(ModuleId.EmailTemplates, "Email Templates", "", true),
-        new(ModuleId.Calendar,       "Calendar",        "", false),
-        new(ModuleId.Tasks,          "Tasks & Notes",   "", false),
-        new(ModuleId.Ssh,            "SSH & Remote",    "", false),
+        new(ModuleId.Calendar,       "Calendar",        "", true),
+        new(ModuleId.Tasks,          "Tasks & Notes",   "", true),
+        new(ModuleId.Ssh,            "SSH & Remote",    "", true),
         new(ModuleId.Downloads,      "Downloads",       "", true),
         new(ModuleId.Bookmarks,      "Bookmarks",       "", true),
         new(ModuleId.History,        "History",         "", true),
@@ -146,6 +146,10 @@ public sealed partial class MainViewModel : ObservableObject
             ModuleId.Infrastructure => CreateInfrastructure(),
             ModuleId.Workspaces => CreateWorkspaces(),
             ModuleId.Downloads => _sp.GetRequiredService<DownloadsViewModel>(),
+            ModuleId.Tasks => _sp.GetRequiredService<TasksViewModel>(),
+            ModuleId.Calendar => _sp.GetRequiredService<CalendarViewModel>(),
+            ModuleId.Ssh => _sp.GetRequiredService<SshViewModel>(),
+            ModuleId.KnowledgeBase => _sp.GetRequiredService<KnowledgeBaseViewModel>(),
             ModuleId.Bookmarks => CreateWithNavigation(_sp.GetRequiredService<BookmarksViewModel>(), v => ((BookmarksViewModel)v).NavigateRequested += OpenInBrowser),
             ModuleId.History => CreateWithNavigation(_sp.GetRequiredService<HistoryViewModel>(), v => ((HistoryViewModel)v).NavigateRequested += OpenInBrowser),
             _ => new PlaceholderViewModel(
@@ -257,6 +261,10 @@ public sealed partial class MainViewModel : ObservableObject
             case BookmarksViewModel b: b.Reload(); break;
             case HistoryViewModel h: h.Reload(); break;
             case WorkspacesViewModel w: w.Reload(); break;
+            case TasksViewModel t: t.Reload(); break;
+            case CalendarViewModel c: c.Reload(); break;
+            case SshViewModel s: s.Reload(); break;
+            case KnowledgeBaseViewModel k: k.Reload(); break;
         }
     }
 

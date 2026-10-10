@@ -28,6 +28,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         _aiTemperature = settings.AiTemperature;
         _redactNetworkBeforeAi = settings.RedactNetworkBeforeAi;
         _aiEnabled = settings.AiEnabled;
+        _blockTrackers = settings.BlockTrackers;
+        _httpsOnly = settings.HttpsOnly;
 
         UpdateApiKeyStatus();
     }
@@ -47,6 +49,8 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private double _aiTemperature;
     [ObservableProperty] private bool _redactNetworkBeforeAi;
     [ObservableProperty] private bool _aiEnabled;
+    [ObservableProperty] private bool _blockTrackers;
+    [ObservableProperty] private bool _httpsOnly;
 
     [ObservableProperty] private string _geminiApiKeyInput = string.Empty;
     [ObservableProperty] private bool _hasGeminiApiKey;
@@ -93,6 +97,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         _settings.AiEnabled = value;
         SettingsChanged?.Invoke();
     }
+
+    partial void OnBlockTrackersChanged(bool value) => _settings.BlockTrackers = value;
+    partial void OnHttpsOnlyChanged(bool value) => _settings.HttpsOnly = value;
 
     [RelayCommand]
     private void SaveApiKey()
