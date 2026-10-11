@@ -12,17 +12,21 @@ public sealed partial class MainViewModel : ObservableObject
 {
     private readonly IServiceProvider _sp;
     private readonly DIG.Core.Data.BookmarkRepository _bookmarks;
+    private readonly AppSettingsService _settings;
     private readonly Dictionary<ModuleId, object> _moduleCache = new();
 
     public MainViewModel(IServiceProvider sp, DIG.Core.Data.BookmarkRepository bookmarks)
     {
         _sp = sp;
         _bookmarks = bookmarks;
+        _settings = sp.GetRequiredService<AppSettingsService>();
 
         Tabs = new ObservableCollection<BrowserTabViewModel>();
         CommandPalette = new CommandPaletteViewModel();
         SidebarItems = BuildSidebar();
         SidebarItems[0].IsActive = true; // Browser active on launch
+        _blockTrackers = _settings.BlockTrackers;
+        _httpsOnly = _settings.HttpsOnly;
         BuildPalette();
         UpdateClocks();
         RefreshStartBookmarks();
@@ -41,6 +45,22 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _isBrowserVisible = true;
     [ObservableProperty] private bool _showStartPage = true;
     [ObservableProperty] private bool _showWebView;
+
+    // ---- Chrome / Brave-style UI state ----
+    [ObservableProperty] private bool _showBookmarksBar = true;
+    [ObservableProperty] private bool _isFullScreen;
+    [ObservableProperty] private bool _menuOpen;
+    [ObservableProperty] private bool _shieldsOpen;
+    [ObservableProperty] private bool _blockTrackers;
+    [ObservableProperty] private bool _httpsOnly;
+
+    partial void OnBlockTrackersChanged(bool value) => _settings.BlockTrackers = value;
+    partial void OnHttpsOnlyChanged(bool value) => _settings.HttpsOnly = value;
+
+    /// <summary>The bookmarks bar shows only when enabled and not in full-screen.</summary>
+    public bool BookmarksBarVisible => ShowBookmarksBar && !IsFullScreen;
+    partial void OnShowBookmarksBarChanged(bool value) => OnPropertyChanged(nameof(BookmarksBarVisible));
+    partial void OnIsFullScreenChanged(bool value) => OnPropertyChanged(nameof(BookmarksBarVisible));
 
     public ObservableCollection<DIG.Core.Models.Bookmark> StartBookmarks { get; } = new();
 
@@ -368,6 +388,59 @@ public sealed partial class MainViewModel : ObservableObject
 
     [RelayCommand]
     private void OpenCommandPalette() => CommandPalette.Open();
+
+    // ---- Chrome / Brave-style commands ----
+
+    [RelayCommand] private void ToggleBookmarksBar() => ShowBookmarksBar = !ShowBookmarksBar;
+    [RelayCommand] private void ToggleMenu() => MenuOpen = !MenuOpen;
+    [RelayCommand] private void ToggleShields() => ShieldsOpen = !ShieldsOpen;
+
+    [RelayCommand]
+    private void ToggleFullScreen()
+    {
+        IsFullScreen = !IsFullScreen;
+        Browser?.ToggleFullScreen();
+    }
+
+    [RelayCommand] private void ReopenClosedTab() { CloseMenu(); Browser?.ReopenClosedTab(); }
+    [RelayCommand] private void DuplicateTab(BrowserTabViewModel? tab) => Browser?.DuplicateTab(tab ?? ActiveTab);
+    [RelayCommand] private void PinTab(BrowserTabViewModel? tab) => Browser?.TogglePin(tab ?? ActiveTab);
+    [RelayCommand] private void MuteTab(BrowserTabViewModel? tab) => Browser?.ToggleMute(tab ?? ActiveTab);
+    [RelayCommand] private void CloseOtherTabs(BrowserTabViewModel? tab) => Browser?.CloseOtherTabs(tab ?? ActiveTab);
+    [RelayCommand] private void NextTab() => Browser?.NextTab();
+    [RelayCommand] private void PreviousTab() => Browser?.PreviousTab();
+
+    [RelayCommand] private void Print() { CloseMenu(); Browser?.Print(); }
+
+    [RelayCommand]
+    private void ReaderMode()
+    {
+        CloseMenu();
+        if (CurrentModuleId != ModuleId.Browser) SelectModule(ModuleId.Browser);
+        Browser?.ToggleReaderMode();
+    }
+
+    /// <summary>Menu entry that routes to an existing module/command, then closes the menu.</summary>
+    [RelayCommand]
+    private void MenuGo(string? target)
+    {
+        CloseMenu();
+        switch (target)
+        {
+            case "newtab": NewTab(); break;
+            case "private": NewPrivateTab(); break;
+            case "history": SelectModule(ModuleId.History); break;
+            case "downloads": SelectModule(ModuleId.Downloads); break;
+            case "bookmarks": SelectModule(ModuleId.Bookmarks); break;
+            case "find": ShowFind(); break;
+            case "zoomin": ZoomIn(); break;
+            case "zoomout": ZoomOut(); break;
+            case "zoomreset": ZoomReset(); break;
+            case "settings": SelectModule(ModuleId.Settings); break;
+        }
+    }
+
+    private void CloseMenu() => MenuOpen = false;
 
     // ---- Smart selection actions (invoked from the WebView2 context menu) ----
 

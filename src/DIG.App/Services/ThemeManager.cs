@@ -36,8 +36,13 @@ public static class ThemeManager
         app.Resources["Color.Cyan"] = accent;
         app.Resources["Brush.Cyan"] = new SolidColorBrush(accent);
 
-        // 3. Start-page background: custom image if set & readable, else the gradient.
-        app.Resources["Brush.StartBackground"] = BuildBackground(preset, customBackgroundPath);
+        // 3. App wallpaper: custom image if set & readable, else the gradient. This
+        //    paints the whole window; the chrome surfaces are translucent "glass"
+        //    so the wallpaper shows through the entire application, not just a tab.
+        var background = BuildBackground(preset, customBackgroundPath);
+        app.Resources["Brush.AppBackground"] = background;
+        // The start page sits directly on the wallpaper, so keep it transparent.
+        app.Resources["Brush.StartBackground"] = Brushes.Transparent;
     }
 
     private static Brush BuildBackground(ThemePreset preset, string? customBackgroundPath)

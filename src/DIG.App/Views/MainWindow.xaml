@@ -3,28 +3,35 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="D!G! Infrastructure Browser"
-        Height="760" Width="1200"
-        MinHeight="520" MinWidth="820"
+        Height="780" Width="1240"
+        MinHeight="520" MinWidth="860"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
-        Background="{DynamicResource Brush.Obsidian}"
+        Background="{DynamicResource Brush.AppBackground}"
         Foreground="{DynamicResource Brush.TextPrimary}"
         FontFamily="{DynamicResource Font.Ui}"
         TextOptions.TextFormattingMode="Ideal"
         TextOptions.TextRenderingMode="ClearType">
 
     <shell:WindowChrome.WindowChrome>
-        <shell:WindowChrome CaptionHeight="34" ResizeBorderThickness="6" CornerRadius="0" GlassFrameThickness="0" />
+        <shell:WindowChrome CaptionHeight="42" ResizeBorderThickness="6" CornerRadius="0" GlassFrameThickness="0" />
     </shell:WindowChrome.WindowChrome>
 
     <Window.InputBindings>
         <KeyBinding Modifiers="Control" Key="K" Command="{Binding OpenCommandPaletteCommand}" />
         <KeyBinding Modifiers="Control" Key="T" Command="{Binding NewTabCommand}" />
+        <KeyBinding Modifiers="Control+Shift" Key="T" Command="{Binding ReopenClosedTabCommand}" />
         <KeyBinding Modifiers="Control+Shift" Key="N" Command="{Binding NewPrivateTabCommand}" />
+        <KeyBinding Modifiers="Control+Shift" Key="B" Command="{Binding ToggleBookmarksBarCommand}" />
         <KeyBinding Modifiers="Control" Key="W" Command="{Binding CloseActiveTabCommand}" />
         <KeyBinding Modifiers="Control" Key="L" Command="{Binding FocusAddressBarCommand}" />
         <KeyBinding Modifiers="Control" Key="F" Command="{Binding ShowFindCommand}" />
         <KeyBinding Modifiers="Control" Key="R" Command="{Binding ReloadCommand}" />
+        <KeyBinding Modifiers="Control" Key="D" Command="{Binding AddBookmarkCommand}" />
+        <KeyBinding Modifiers="Control" Key="P" Command="{Binding PrintCommand}" />
+        <KeyBinding Modifiers="Control" Key="Tab" Command="{Binding NextTabCommand}" />
+        <KeyBinding Modifiers="Control+Shift" Key="Tab" Command="{Binding PreviousTabCommand}" />
+        <KeyBinding Key="F11" Command="{Binding ToggleFullScreenCommand}" />
         <KeyBinding Modifiers="Alt" Key="Left" Command="{Binding GoBackCommand}" />
         <KeyBinding Modifiers="Alt" Key="Right" Command="{Binding GoForwardCommand}" />
         <KeyBinding Modifiers="Control" Key="OemPlus" Command="{Binding ZoomInCommand}" />
@@ -35,6 +42,7 @@
         <KeyBinding Modifiers="Control" Key="NumPad0" Command="{Binding ZoomResetCommand}" />
     </Window.InputBindings>
 
+    <!-- The whole window sits on the app wallpaper; chrome rows are translucent glass. -->
     <Grid x:Name="RootGrid">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -44,146 +52,230 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Title bar -->
-        <Grid Grid.Row="0" Height="34" Background="{DynamicResource Brush.Obsidian}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+        <!-- ============ Row 0: merged title bar + tab strip (Chrome-style) ============ -->
+        <Border Grid.Row="0" Background="{DynamicResource Brush.GlassBar}"
+                Visibility="{Binding IsFullScreen, Converter={StaticResource InverseBoolToVis}}">
+            <Grid Height="42">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="0" Margin="14,0,0,0" VerticalAlignment="Center" FontSize="15" FontWeight="Bold">
-                <Run Text="D" Foreground="{DynamicResource Brush.TextPrimary}" />
-                <Run Text="!" Foreground="{DynamicResource Brush.Cyan}" />
-                <Run Text="G" Foreground="{DynamicResource Brush.TextPrimary}" />
-                <Run Text="!" Foreground="{DynamicResource Brush.Cyan}" />
-                <Run Text="  Infrastructure Browser" FontWeight="Normal" FontSize="11"
-                     Foreground="{DynamicResource Brush.TextSecondary}" />
-            </TextBlock>
+                <!-- Brand mark (draggable) -->
+                <TextBlock Grid.Column="0" Margin="14,0,10,0" VerticalAlignment="Center" FontSize="16" FontWeight="Bold">
+                    <Run Text="D" Foreground="{DynamicResource Brush.TextPrimary}" />
+                    <Run Text="!" Foreground="{DynamicResource Brush.Cyan}" />
+                    <Run Text="G" Foreground="{DynamicResource Brush.TextPrimary}" />
+                    <Run Text="!" Foreground="{DynamicResource Brush.Cyan}" />
+                </TextBlock>
 
-            <StackPanel Grid.Column="2" Orientation="Horizontal" shell:WindowChrome.IsHitTestVisibleInChrome="True">
-                <Button x:Name="MinButton" Style="{DynamicResource ToolbarButton}" Content="&#xE921;" Click="MinButton_Click" />
-                <Button x:Name="MaxButton" Style="{DynamicResource ToolbarButton}" Content="&#xE922;" Click="MaxButton_Click" />
-                <Button x:Name="CloseButton" Style="{DynamicResource ToolbarButton}" Content="&#xE8BB;" Click="CloseButton_Click" />
-            </StackPanel>
-        </Grid>
+                <!-- Tabs -->
+                <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Hidden"
+                              VerticalAlignment="Bottom" shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <StackPanel Orientation="Horizontal">
+                        <ItemsControl ItemsSource="{Binding Tabs}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border x:Name="tabBd" Margin="2,0,0,0" CornerRadius="9,9,0,0" Padding="10,7,8,8"
+                                            MinWidth="46" MaxWidth="210" Cursor="Hand"
+                                            Background="Transparent"
+                                            Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                                        <Border.InputBindings>
+                                            <MouseBinding MouseAction="LeftClick"
+                                                          Command="{Binding DataContext.ActivateTabCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                          CommandParameter="{Binding}" />
+                                            <MouseBinding MouseAction="MiddleClick"
+                                                          Command="{Binding DataContext.CloseTabCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                          CommandParameter="{Binding}" />
+                                        </Border.InputBindings>
+                                        <Border.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="New tab"
+                                                          Command="{Binding PlacementTarget.Tag.NewTabCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                <MenuItem Header="Duplicate tab"
+                                                          Command="{Binding PlacementTarget.Tag.DuplicateTabCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                <MenuItem Header="Pin / unpin tab"
+                                                          Command="{Binding PlacementTarget.Tag.PinTabCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                <MenuItem Header="Mute / unmute tab"
+                                                          Command="{Binding PlacementTarget.Tag.MuteTabCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                <Separator />
+                                                <MenuItem Header="Close other tabs"
+                                                          Command="{Binding PlacementTarget.Tag.CloseOtherTabsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                <MenuItem Header="Close tab"
+                                                          Command="{Binding PlacementTarget.Tag.CloseTabCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                            </ContextMenu>
+                                        </Border.ContextMenu>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Grid Width="16" Height="16" VerticalAlignment="Center">
+                                                <TextBlock x:Name="tabGlyph" Text="&#xE774;" FontFamily="{DynamicResource Font.Icon}"
+                                                           FontSize="11" Foreground="{DynamicResource Brush.TextSecondary}"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                <Image Width="16" Height="16" Source="{Binding FaviconUrl}"
+                                                       Visibility="{Binding FaviconUrl, Converter={StaticResource NullToVis}}" />
+                                            </Grid>
+                                            <TextBlock x:Name="tabMute" Text="&#xE74F;" FontFamily="{DynamicResource Font.Icon}" FontSize="10"
+                                                       Margin="6,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource Brush.TextSecondary}"
+                                                       Visibility="{Binding IsMuted, Converter={StaticResource BoolToVis}}" />
+                                            <TextBlock x:Name="tabTitle" Text="{Binding Title}" VerticalAlignment="Center" Margin="7,0,6,0"
+                                                       TextTrimming="CharacterEllipsis" MaxWidth="128"
+                                                       Foreground="{DynamicResource Brush.TextSecondary}" />
+                                            <Button x:Name="tabClose" Style="{DynamicResource ToolbarButton}" Width="18" Height="18" FontSize="9"
+                                                    Content="&#xE8BB;" ToolTip="Close tab"
+                                                    Command="{Binding DataContext.CloseTabCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                    </Border>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                            <Setter TargetName="tabBd" Property="Background" Value="{DynamicResource Brush.GlassContent}" />
+                                            <Setter TargetName="tabTitle" Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsPinned}" Value="True">
+                                            <Setter TargetName="tabTitle" Property="Visibility" Value="Collapsed" />
+                                            <Setter TargetName="tabClose" Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsPrivate}" Value="True">
+                                            <Setter TargetName="tabBd" Property="BorderBrush" Value="{DynamicResource Brush.Violet}" />
+                                            <Setter TargetName="tabBd" Property="BorderThickness" Value="1,1,1,0" />
+                                            <Setter TargetName="tabGlyph" Property="Text" Value="&#xE727;" />
+                                            <Setter TargetName="tabGlyph" Property="Foreground" Value="{DynamicResource Brush.Violet}" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Style="{DynamicResource ToolbarButton}" Width="30" Height="28" VerticalAlignment="Bottom" Margin="4,0,0,4"
+                                Content="&#xE710;" ToolTip="New tab (Ctrl+T)" Command="{Binding NewTabCommand}" />
+                    </StackPanel>
+                </ScrollViewer>
 
-        <!-- Toolbar -->
-        <Grid Grid.Row="1" Height="46" Background="{DynamicResource Brush.Graphite}"
-              shell:WindowChrome.IsHitTestVisibleInChrome="True">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-
-            <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="8,0,4,0" VerticalAlignment="Center">
-                <Button Style="{DynamicResource ToolbarButton}" Content="&#xE72B;" ToolTip="Back" Command="{Binding GoBackCommand}" />
-                <Button Style="{DynamicResource ToolbarButton}" Content="&#xE72A;" ToolTip="Forward" Command="{Binding GoForwardCommand}" />
-                <Button Style="{DynamicResource ToolbarButton}" Content="&#xE72C;" ToolTip="Reload" Command="{Binding ReloadCommand}" />
-                <Button Style="{DynamicResource ToolbarButton}" Content="&#xE711;" ToolTip="Stop" Command="{Binding StopCommand}" />
-                <Button Style="{DynamicResource ToolbarButton}" Content="&#xE80F;" ToolTip="Home" Command="{Binding GoHomeCommand}" />
-            </StackPanel>
-
-            <Border Grid.Column="1" Margin="6,8" Background="{DynamicResource Brush.Surface}"
-                    BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="6">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="&#xE71E;" FontFamily="{DynamicResource Font.Icon}" FontSize="12"
-                               Foreground="{DynamicResource Brush.TextSecondary}" VerticalAlignment="Center" Margin="10,0,6,0" />
-                    <TextBox x:Name="Omnibox" Grid.Column="1" Background="Transparent" BorderThickness="0"
-                             VerticalContentAlignment="Center" FontFamily="{DynamicResource Font.Ui}" FontSize="13"
-                             Foreground="{DynamicResource Brush.TextPrimary}"
-                             Text="{Binding OmniboxText, UpdateSourceTrigger=PropertyChanged}"
-                             ToolTip="Enter a URL, search, IP, FQDN or VMware build number">
-                        <TextBox.InputBindings>
-                            <KeyBinding Key="Return" Command="{Binding NavigateCommand}" />
-                        </TextBox.InputBindings>
-                    </TextBox>
-                </Grid>
-            </Border>
-
-            <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="4,0,8,0" VerticalAlignment="Center">
-                <Button Style="{DynamicResource ToolbarButton}" Content="&#xE710;" ToolTip="New tab (Ctrl+T)" Command="{Binding NewTabCommand}" />
-                <Button Style="{DynamicResource ToolbarButton}" Content="&#xE727;" Foreground="{DynamicResource Brush.Violet}"
-                        ToolTip="New private tab (Ctrl+Shift+N) — isolated session, not saved to history" Command="{Binding NewPrivateTabCommand}" />
-                <Button Style="{DynamicResource ToolbarButton}" Content="&#xE8C8;" ToolTip="Copy page URL" Command="{Binding CopyUrlCommand}" />
-                <Button Style="{DynamicResource ToolbarButton}" Content="&#xE734;" ToolTip="Bookmark this page" Command="{Binding AddBookmarkCommand}" />
-                <Button Style="{DynamicResource ToolbarButton}" Content="&#xE721;" ToolTip="Command palette (Ctrl+K)" Command="{Binding OpenCommandPaletteCommand}" />
-            </StackPanel>
-        </Grid>
-
-        <!-- Tab strip -->
-        <Border Grid.Row="2" Background="{DynamicResource Brush.Graphite}" Padding="8,0,8,0">
-          <DockPanel>
-            <ProgressBar DockPanel.Dock="Bottom" Height="2" IsIndeterminate="True" BorderThickness="0" Margin="-8,4,-8,0"
-                         Foreground="{DynamicResource Brush.Cyan}" Background="Transparent"
-                         Visibility="{Binding ActiveTab.IsLoading, Converter={StaticResource BoolToVis}}" />
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                <ItemsControl ItemsSource="{Binding Tabs}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border x:Name="tabBd" Margin="0,0,6,0" CornerRadius="6" Padding="10,5"
-                                    Background="{DynamicResource Brush.Surface}" MaxWidth="220">
-                                <StackPanel Orientation="Horizontal">
-                                    <Button Style="{DynamicResource ToolbarButton}" Width="20" Height="20"
-                                            Command="{Binding DataContext.ActivateTabCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                            CommandParameter="{Binding}">
-                                        <Grid>
-                                            <TextBlock x:Name="tabGlyph" Text="&#xE774;" FontFamily="{DynamicResource Font.Icon}"
-                                                       FontSize="10" Foreground="{DynamicResource Brush.TextSecondary}"
-                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                            <Image Width="16" Height="16" Source="{Binding FaviconUrl}"
-                                                   Visibility="{Binding FaviconUrl, Converter={StaticResource NullToVis}}" />
-                                        </Grid>
-                                    </Button>
-                                    <TextBlock Text="{Binding Title}" VerticalAlignment="Center" Margin="6,0,6,0"
-                                               TextTrimming="CharacterEllipsis" MaxWidth="150"
-                                               Foreground="{DynamicResource Brush.TextSecondary}" x:Name="tabTitle" />
-                                    <Button Style="{DynamicResource ToolbarButton}" Width="18" Height="18" FontSize="9"
-                                            Content="&#xE8BB;" ToolTip="Close tab"
-                                            Command="{Binding DataContext.CloseTabCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                            CommandParameter="{Binding}" />
-                                </StackPanel>
-                            </Border>
-                            <DataTemplate.Triggers>
-                                <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                    <Setter TargetName="tabBd" Property="Background" Value="{DynamicResource Brush.SurfaceAlt}" />
-                                    <Setter TargetName="tabTitle" Property="Foreground" Value="{DynamicResource Brush.Cyan}" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding IsPrivate}" Value="True">
-                                    <Setter TargetName="tabBd" Property="BorderBrush" Value="{DynamicResource Brush.Violet}" />
-                                    <Setter TargetName="tabBd" Property="BorderThickness" Value="1" />
-                                    <Setter TargetName="tabGlyph" Property="Text" Value="&#xE727;" />
-                                    <Setter TargetName="tabGlyph" Property="Foreground" Value="{DynamicResource Brush.Violet}" />
-                                </DataTrigger>
-                            </DataTemplate.Triggers>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-                <Button Style="{DynamicResource ToolbarButton}" Content="&#xE710;" ToolTip="New tab" Command="{Binding NewTabCommand}" />
-            </StackPanel>
-          </DockPanel>
+                <!-- Window controls -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top"
+                            shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button x:Name="MinButton" Style="{DynamicResource ToolbarButton}" Height="42" Content="&#xE921;" Click="MinButton_Click" />
+                    <Button x:Name="MaxButton" Style="{DynamicResource ToolbarButton}" Height="42" Content="&#xE922;" Click="MaxButton_Click" />
+                    <Button x:Name="CloseButton" Style="{DynamicResource CaptionCloseButton}" Height="42" Content="&#xE8BB;" Click="CloseButton_Click" />
+                </StackPanel>
+            </Grid>
         </Border>
 
-        <!-- Body: sidebar + content -->
+        <!-- ============ Row 1: toolbar (nav + omnibox + actions) ============ -->
+        <Border Grid.Row="1" Background="{DynamicResource Brush.GlassBar}"
+                BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,1,0,0"
+                Visibility="{Binding IsFullScreen, Converter={StaticResource InverseBoolToVis}}"
+                shell:WindowChrome.IsHitTestVisibleInChrome="True">
+            <Grid Height="48">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="8,0,4,0" VerticalAlignment="Center">
+                    <Button Style="{DynamicResource ToolbarButton}" Content="&#xE72B;" ToolTip="Back (Alt+Left)" Command="{Binding GoBackCommand}" />
+                    <Button Style="{DynamicResource ToolbarButton}" Content="&#xE72A;" ToolTip="Forward (Alt+Right)" Command="{Binding GoForwardCommand}" />
+                    <Button Style="{DynamicResource ToolbarButton}" Content="&#xE72C;" ToolTip="Reload (Ctrl+R)" Command="{Binding ReloadCommand}" />
+                    <Button Style="{DynamicResource ToolbarButton}" Content="&#xE80F;" ToolTip="Home" Command="{Binding GoHomeCommand}" />
+                </StackPanel>
+
+                <!-- Pill omnibox -->
+                <Border Grid.Column="1" Margin="8,9" Background="{DynamicResource Brush.Surface}"
+                        BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="16" MaxWidth="820">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Shield / security button -->
+                        <Button x:Name="ShieldButton" Grid.Column="0" Style="{DynamicResource ToolbarButton}" Width="30" Height="28"
+                                Margin="4,0,0,0" ToolTip="Site shields — trackers blocked" Command="{Binding ToggleShieldsCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE72E;" FontFamily="{DynamicResource Font.Icon}" FontSize="13"
+                                           Foreground="{DynamicResource Brush.Success}" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding ActiveTab.BlockedCount}" FontSize="10" Margin="2,0,0,0" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource Brush.TextSecondary}"
+                                           Visibility="{Binding ActiveTab.BlockedCount, Converter={StaticResource CountToVis}}" />
+                            </StackPanel>
+                        </Button>
+
+                        <TextBox x:Name="Omnibox" Grid.Column="1" Background="Transparent" BorderThickness="0"
+                                 VerticalContentAlignment="Center" FontFamily="{DynamicResource Font.Ui}" FontSize="13"
+                                 Foreground="{DynamicResource Brush.TextPrimary}"
+                                 Text="{Binding OmniboxText, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Search Google, or enter a URL, IP, FQDN or VMware build number">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Return" Command="{Binding NavigateCommand}" />
+                            </TextBox.InputBindings>
+                        </TextBox>
+
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,4,0">
+                            <Button Style="{DynamicResource ToolbarButton}" Width="30" Height="28" Content="&#xE736;"
+                                    ToolTip="Reader mode" Command="{Binding ReaderModeCommand}" />
+                            <Button Style="{DynamicResource ToolbarButton}" Width="30" Height="28" Content="&#xE734;"
+                                    ToolTip="Bookmark this page (Ctrl+D)" Command="{Binding AddBookmarkCommand}" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="4,0,8,0" VerticalAlignment="Center">
+                    <Button Style="{DynamicResource ToolbarButton}" Content="&#xE727;" Foreground="{DynamicResource Brush.Violet}"
+                            ToolTip="New private tab (Ctrl+Shift+N)" Command="{Binding NewPrivateTabCommand}" />
+                    <Button Style="{DynamicResource ToolbarButton}" Content="&#xE896;" ToolTip="Downloads"
+                            Command="{Binding MenuGoCommand}" CommandParameter="downloads" />
+                    <Button Style="{DynamicResource ToolbarButton}" Content="&#xE721;" ToolTip="Command palette (Ctrl+K)" Command="{Binding OpenCommandPaletteCommand}" />
+                    <Button x:Name="MenuButton" Style="{DynamicResource ToolbarButton}" Content="&#xE712;" ToolTip="Menu" Command="{Binding ToggleMenuCommand}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ============ Row 2: bookmarks bar ============ -->
+        <Border Grid.Row="2" Background="{DynamicResource Brush.GlassBar}"
+                BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,1,0,0" Padding="8,3"
+                Visibility="{Binding BookmarksBarVisible, Converter={StaticResource BoolToVis}}">
+            <ScrollViewer VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Hidden">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE734;" FontFamily="{DynamicResource Font.Icon}" FontSize="12" VerticalAlignment="Center"
+                               Foreground="{DynamicResource Brush.TextSecondary}" Margin="6,0,2,0" />
+                    <ItemsControl ItemsSource="{Binding StartBookmarks}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{DynamicResource ToolbarButton}" Width="Auto" Height="24" Padding="8,0" FontSize="12"
+                                        FontFamily="{DynamicResource Font.Ui}" Foreground="{DynamicResource Brush.TextSecondary}"
+                                        Content="{Binding Title}" ToolTip="{Binding Url}"
+                                        Command="{Binding DataContext.OpenStartBookmarkCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- ============ Row 3: sidebar + content ============ -->
         <Grid Grid.Row="3">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="212" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <!-- Sidebar -->
-            <Border Grid.Column="0" Background="{DynamicResource Brush.Graphite}"
-                    BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,1,0">
+            <!-- Sidebar (hidden in full-screen) -->
+            <Border Grid.Column="0" Width="214" Background="{DynamicResource Brush.GlassSide}"
+                    BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,1,0"
+                    Visibility="{Binding IsFullScreen, Converter={StaticResource InverseBoolToVis}}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding SidebarItems}" Margin="0,8">
                         <ItemsControl.ItemTemplate>
@@ -197,8 +289,8 @@
                 </ScrollViewer>
             </Border>
 
-            <!-- Content area -->
-            <Grid Grid.Column="1" Background="{DynamicResource Brush.Obsidian}">
+            <!-- Content area (transparent so the wallpaper shows through) -->
+            <Grid Grid.Column="1" Background="{DynamicResource Brush.GlassContent}">
                 <!-- Browser host (WebView2 controls added in code-behind).
                      Hidden when the start page shows (WebView2 would paint over it). -->
                 <Grid x:Name="BrowserHost"
@@ -208,56 +300,57 @@
                                 Visibility="{Binding IsBrowserVisible, Converter={StaticResource InverseBoolToVis}}" />
 
                 <!-- New-tab start page -->
-                <ScrollViewer VerticalScrollBarVisibility="Auto" Background="{DynamicResource Brush.StartBackground}"
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Background="Transparent"
                               Style="{DynamicResource FadeInOnShow}"
                               Visibility="{Binding ShowStartPage, Converter={StaticResource BoolToVis}}">
-                    <StackPanel MaxWidth="840" Margin="40,52" HorizontalAlignment="Center">
-                        <TextBlock HorizontalAlignment="Center" FontSize="46" FontWeight="Bold">
+                    <StackPanel MaxWidth="860" Margin="40,56" HorizontalAlignment="Center">
+                        <TextBlock HorizontalAlignment="Center" FontSize="52" FontWeight="Bold">
                             <Run Text="D" Foreground="{DynamicResource Brush.TextPrimary}" />
                             <Run Text="!" Foreground="{DynamicResource Brush.Cyan}" />
                             <Run Text="G" Foreground="{DynamicResource Brush.TextPrimary}" />
                             <Run Text="!" Foreground="{DynamicResource Brush.Cyan}" />
                         </TextBlock>
                         <TextBlock Text="One workspace. Every tool. Less friction." HorizontalAlignment="Center"
-                                   Style="{DynamicResource Text.Secondary}" Margin="0,2,0,22" />
+                                   Style="{DynamicResource Text.Secondary}" FontSize="14" Margin="0,2,0,24" />
 
                         <Border Background="{DynamicResource Brush.Surface}" BorderBrush="{DynamicResource Brush.Border}"
-                                BorderThickness="1" CornerRadius="24" Padding="6,4" MaxWidth="620">
+                                BorderThickness="1" CornerRadius="26" Padding="8,5" MaxWidth="640">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="&#xE721;" FontFamily="{DynamicResource Font.Icon}" FontSize="14"
-                                           Foreground="{DynamicResource Brush.TextSecondary}" VerticalAlignment="Center" Margin="12,0,8,0" />
+                                <TextBlock Grid.Column="0" Text="&#xE721;" FontFamily="{DynamicResource Font.Icon}" FontSize="15"
+                                           Foreground="{DynamicResource Brush.TextSecondary}" VerticalAlignment="Center" Margin="14,0,8,0" />
                                 <TextBox Grid.Column="1" Background="Transparent" BorderThickness="0" FontSize="15"
                                          VerticalContentAlignment="Center" Foreground="{DynamicResource Brush.TextPrimary}"
                                          Text="{Binding OmniboxText, UpdateSourceTrigger=PropertyChanged}"
-                                         ToolTip="Search or enter a URL, IP, FQDN or VMware build number">
+                                         ToolTip="Search Google, or enter a URL, IP, FQDN or VMware build number">
                                     <TextBox.InputBindings>
                                         <KeyBinding Key="Return" Command="{Binding NavigateCommand}" />
                                     </TextBox.InputBindings>
                                 </TextBox>
-                                <Button Grid.Column="2" Content="Go" Style="{DynamicResource AccentButton}" Margin="4,2"
+                                <Button Grid.Column="2" Content="Search" Style="{DynamicResource AccentButton}" Margin="4,2"
                                         Command="{Binding NavigateCommand}" />
                             </Grid>
                         </Border>
 
-                        <TextBlock Text="Jump to" Style="{DynamicResource Text.Section}" Margin="0,28,0,8" />
+                        <TextBlock Text="Jump to" Style="{DynamicResource Text.Section}" Margin="0,30,0,8" />
                         <ItemsControl ItemsSource="{Binding StartTiles}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Button Style="{DynamicResource SubtleButton}" Margin="0,0,10,10" Padding="14,10"
+                                    <Button Style="{DynamicResource TileButton}" Margin="0,0,12,12"
                                             Command="{Binding DataContext.SelectModuleCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                             CommandParameter="{Binding Id}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding Glyph}" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
-                                                       Foreground="{DynamicResource Brush.Cyan}" VerticalAlignment="Center" />
-                                            <TextBlock Text="{Binding Label}" Margin="10,0,0,0" VerticalAlignment="Center" />
+                                        <StackPanel Width="96">
+                                            <TextBlock Text="{Binding Glyph}" FontFamily="{DynamicResource Font.Icon}" FontSize="24"
+                                                       Foreground="{DynamicResource Brush.Cyan}" HorizontalAlignment="Center" Margin="0,2,0,8" />
+                                            <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" TextAlignment="Center"
+                                                       TextWrapping="Wrap" FontSize="12" />
                                         </StackPanel>
                                     </Button>
                                 </DataTemplate>
@@ -282,13 +375,13 @@
                         </ItemsControl>
                     </StackPanel>
                 </ScrollViewer>
-
             </Grid>
         </Grid>
 
-        <!-- Status bar -->
-        <Border Grid.Row="4" Height="26" Background="{DynamicResource Brush.Graphite}"
-                BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,1,0,0">
+        <!-- ============ Row 4: status bar ============ -->
+        <Border Grid.Row="4" Height="26" Background="{DynamicResource Brush.GlassBar}"
+                BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,1,0,0"
+                Visibility="{Binding IsFullScreen, Converter={StaticResource InverseBoolToVis}}">
             <Grid Margin="12,0">
                 <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="11"
                            Foreground="{DynamicResource Brush.TextSecondary}" Text="{Binding SecurityStatus}" />
@@ -302,6 +395,11 @@
                 </StackPanel>
             </Grid>
         </Border>
+
+        <!-- Loading bar (overlays the top of the content area) -->
+        <ProgressBar Grid.Row="3" VerticalAlignment="Top" Height="2" IsIndeterminate="True" BorderThickness="0"
+                     Foreground="{DynamicResource Brush.Cyan}" Background="Transparent"
+                     Visibility="{Binding ActiveTab.IsLoading, Converter={StaticResource BoolToVis}}" />
 
         <!-- Find-in-page bar (Popup so it paints above the native WebView2) -->
         <Popup IsOpen="{Binding FindVisible, Mode=TwoWay}" PlacementTarget="{Binding ElementName=Omnibox}"
@@ -320,6 +418,68 @@
                     <Button Style="{DynamicResource ToolbarButton}" Content="&#xE70E;" ToolTip="Previous" Command="{Binding FindPreviousCommand}" />
                     <Button Style="{DynamicResource ToolbarButton}" Content="&#xE70D;" ToolTip="Next" Command="{Binding FindNextCommand}" />
                     <Button Style="{DynamicResource ToolbarButton}" Content="&#xE8BB;" ToolTip="Close (Esc)" Command="{Binding CloseFindCommand}" />
+                </StackPanel>
+            </Border>
+        </Popup>
+
+        <!-- Shields popup (Brave-style) -->
+        <Popup IsOpen="{Binding ShieldsOpen, Mode=TwoWay}" PlacementTarget="{Binding ElementName=ShieldButton}"
+               Placement="Bottom" VerticalOffset="6" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+            <Border Width="280" Style="{DynamicResource Card}">
+                <StackPanel>
+                    <TextBlock Text="Shields" Style="{DynamicResource Text.Section}" Margin="0,0,0,4" />
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                        <TextBlock Text="{Binding ActiveTab.BlockedCount}" FontSize="26" FontWeight="Bold"
+                                   Foreground="{DynamicResource Brush.Cyan}" />
+                        <TextBlock Text="trackers &amp; ads blocked on this page" VerticalAlignment="Bottom" Margin="8,0,0,4"
+                                   Style="{DynamicResource Text.Secondary}" />
+                    </StackPanel>
+                    <CheckBox Content="Block trackers &amp; ads" IsChecked="{Binding BlockTrackers}" Margin="0,2" />
+                    <CheckBox Content="Upgrade connections to HTTPS" IsChecked="{Binding HttpsOnly}" Margin="0,2" />
+                    <TextBlock Text="Applies to new page loads." Style="{DynamicResource Text.Secondary}" Margin="0,8,0,0" />
+                </StackPanel>
+            </Border>
+        </Popup>
+
+        <!-- Browser menu popup -->
+        <Popup IsOpen="{Binding MenuOpen, Mode=TwoWay}" PlacementTarget="{Binding ElementName=MenuButton}"
+               Placement="Bottom" HorizontalOffset="-200" VerticalOffset="6" StaysOpen="False"
+               AllowsTransparency="True" PopupAnimation="Fade">
+            <Border Width="252" Style="{DynamicResource Card}" Padding="8">
+                <StackPanel>
+                    <Button Style="{DynamicResource MenuRow}" Command="{Binding MenuGoCommand}" CommandParameter="newtab"
+                            Tag="&#xE710;" Content="New tab" />
+                    <Button Style="{DynamicResource MenuRow}" Command="{Binding MenuGoCommand}" CommandParameter="private"
+                            Tag="&#xE727;" Content="New private tab" />
+                    <Button Style="{DynamicResource MenuRow}" Command="{Binding ReopenClosedTabCommand}"
+                            Tag="&#xE7A6;" Content="Reopen closed tab" />
+                    <Separator Margin="4,6" />
+                    <Button Style="{DynamicResource MenuRow}" Command="{Binding MenuGoCommand}" CommandParameter="history"
+                            Tag="&#xE81C;" Content="History" />
+                    <Button Style="{DynamicResource MenuRow}" Command="{Binding MenuGoCommand}" CommandParameter="downloads"
+                            Tag="&#xE896;" Content="Downloads" />
+                    <Button Style="{DynamicResource MenuRow}" Command="{Binding MenuGoCommand}" CommandParameter="bookmarks"
+                            Tag="&#xE734;" Content="Bookmarks" />
+                    <Button Style="{DynamicResource MenuRow}" Command="{Binding ToggleBookmarksBarCommand}"
+                            Tag="&#xE8A4;" Content="Show / hide bookmarks bar" />
+                    <Separator Margin="4,6" />
+                    <Button Style="{DynamicResource MenuRow}" Command="{Binding MenuGoCommand}" CommandParameter="find"
+                            Tag="&#xE721;" Content="Find on page" />
+                    <Button Style="{DynamicResource MenuRow}" Command="{Binding ReaderModeCommand}"
+                            Tag="&#xE736;" Content="Reader mode" />
+                    <Button Style="{DynamicResource MenuRow}" Command="{Binding PrintCommand}"
+                            Tag="&#xE749;" Content="Print…" />
+                    <Button Style="{DynamicResource MenuRow}" Command="{Binding ToggleFullScreenCommand}"
+                            Tag="&#xE740;" Content="Full screen (F11)" />
+                    <StackPanel Orientation="Horizontal" Margin="8,6,0,2">
+                        <TextBlock Text="Zoom" VerticalAlignment="Center" Width="60" Foreground="{DynamicResource Brush.TextSecondary}" />
+                        <Button Style="{DynamicResource ToolbarButton}" Content="&#xE738;" ToolTip="Zoom out" Command="{Binding ZoomOutCommand}" />
+                        <Button Style="{DynamicResource ToolbarButton}" Content="&#xE12E;" ToolTip="Reset" Command="{Binding ZoomResetCommand}" />
+                        <Button Style="{DynamicResource ToolbarButton}" Content="&#xE710;" ToolTip="Zoom in" Command="{Binding ZoomInCommand}" />
+                    </StackPanel>
+                    <Separator Margin="4,6" />
+                    <Button Style="{DynamicResource MenuRow}" Command="{Binding MenuGoCommand}" CommandParameter="settings"
+                            Tag="&#xE713;" Content="Settings" />
                 </StackPanel>
             </Border>
         </Popup>

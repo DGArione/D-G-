@@ -37,4 +37,14 @@ public sealed partial class BrowserTabViewModel : ObservableObject
 
     [ObservableProperty]
     private string? _faviconUrl;
+
+    /// <summary>Number of tracker/ad requests blocked on this tab (Brave-style shield).</summary>
+    [ObservableProperty]
+    private int _blockedCount;
+
+    [ObservableProperty]
+    private bool _isMuted;
+
+    [ObservableProperty]
+    private bool _readerMode;
 }

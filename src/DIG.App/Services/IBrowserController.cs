@@ -41,4 +41,34 @@ public interface IBrowserController
     void Reload();
     void Stop();
     void GoHome();
+
+    // ---- Chrome / Brave-style extras ----
+
+    /// <summary>Re-opens the most recently closed tab (Ctrl+Shift+T).</summary>
+    void ReopenClosedTab();
+
+    /// <summary>Opens a copy of the given tab (or the active tab when null).</summary>
+    void DuplicateTab(BrowserTabViewModel? tab);
+
+    /// <summary>Pins / unpins a tab.</summary>
+    void TogglePin(BrowserTabViewModel? tab);
+
+    /// <summary>Mutes / unmutes audio for a tab.</summary>
+    void ToggleMute(BrowserTabViewModel? tab);
+
+    /// <summary>Closes every tab except the given one.</summary>
+    void CloseOtherTabs(BrowserTabViewModel? tab);
+
+    /// <summary>Activates the next / previous tab (Ctrl+Tab / Ctrl+Shift+Tab).</summary>
+    void NextTab();
+    void PreviousTab();
+
+    /// <summary>Opens the system print dialog for the active page (Ctrl+P).</summary>
+    void Print();
+
+    /// <summary>Toggles a distraction-free reader view on the active page.</summary>
+    void ToggleReaderMode();
+
+    /// <summary>Toggles borderless full-screen (F11).</summary>
+    void ToggleFullScreen();
 }

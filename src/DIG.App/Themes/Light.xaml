@@ -16,6 +16,11 @@
     <Color x:Key="Color.Warning">#C98A12</Color>
     <Color x:Key="Color.Error">#D83A54</Color>
 
+    <!-- Translucent "glass" surfaces (light): the app wallpaper shows through. -->
+    <Color x:Key="Color.GlassBar">#ECF3F6FA</Color>
+    <Color x:Key="Color.GlassSide">#D9EBEEF3</Color>
+    <Color x:Key="Color.GlassContent">#99F5F7FA</Color>
+
     <SolidColorBrush x:Key="Brush.Obsidian" Color="{DynamicResource Color.Obsidian}" />
     <SolidColorBrush x:Key="Brush.Graphite" Color="{DynamicResource Color.Graphite}" />
     <SolidColorBrush x:Key="Brush.Surface" Color="{DynamicResource Color.Surface}" />
@@ -28,5 +33,12 @@
     <SolidColorBrush x:Key="Brush.Success" Color="{DynamicResource Color.Success}" />
     <SolidColorBrush x:Key="Brush.Warning" Color="{DynamicResource Color.Warning}" />
     <SolidColorBrush x:Key="Brush.Error" Color="{DynamicResource Color.Error}" />
+
+    <SolidColorBrush x:Key="Brush.GlassBar" Color="{DynamicResource Color.GlassBar}" />
+    <SolidColorBrush x:Key="Brush.GlassSide" Color="{DynamicResource Color.GlassSide}" />
+    <SolidColorBrush x:Key="Brush.GlassContent" Color="{DynamicResource Color.GlassContent}" />
+
+    <SolidColorBrush x:Key="Brush.AppBackground" Color="{DynamicResource Color.Obsidian}" />
+    <SolidColorBrush x:Key="Brush.StartBackground" Color="Transparent" />
 
 </ResourceDictionary>

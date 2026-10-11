@@ -17,6 +17,13 @@
     <Color x:Key="Color.Warning">#F5B942</Color>
     <Color x:Key="Color.Error">#FF647C</Color>
 
+    <!-- Translucent "glass" surfaces: the app wallpaper shows through the chrome.
+         Alpha-prefixed so the gradient / image set by ThemeManager is visible
+         behind the title bar, toolbar, tab strip, sidebar and status bar. -->
+    <Color x:Key="Color.GlassBar">#EC12161D</Color>
+    <Color x:Key="Color.GlassSide">#D30F1319</Color>
+    <Color x:Key="Color.GlassContent">#990C0F15</Color>
+
     <SolidColorBrush x:Key="Brush.Obsidian" Color="{DynamicResource Color.Obsidian}" />
     <SolidColorBrush x:Key="Brush.Graphite" Color="{DynamicResource Color.Graphite}" />
     <SolidColorBrush x:Key="Brush.Surface" Color="{DynamicResource Color.Surface}" />
@@ -29,5 +36,14 @@
     <SolidColorBrush x:Key="Brush.Success" Color="{DynamicResource Color.Success}" />
     <SolidColorBrush x:Key="Brush.Warning" Color="{DynamicResource Color.Warning}" />
     <SolidColorBrush x:Key="Brush.Error" Color="{DynamicResource Color.Error}" />
+
+    <SolidColorBrush x:Key="Brush.GlassBar" Color="{DynamicResource Color.GlassBar}" />
+    <SolidColorBrush x:Key="Brush.GlassSide" Color="{DynamicResource Color.GlassSide}" />
+    <SolidColorBrush x:Key="Brush.GlassContent" Color="{DynamicResource Color.GlassContent}" />
+
+    <!-- Fallback app wallpaper (ThemeManager replaces this at runtime with the
+         chosen gradient or image). -->
+    <SolidColorBrush x:Key="Brush.AppBackground" Color="{DynamicResource Color.Obsidian}" />
+    <SolidColorBrush x:Key="Brush.StartBackground" Color="Transparent" />
 
 </ResourceDictionary>

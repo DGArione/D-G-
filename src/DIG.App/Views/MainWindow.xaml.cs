@@ -25,9 +25,11 @@ public partial class MainWindow : Window, IBrowserController
 
     private readonly Dictionary<Guid, WebView2> _views = new();
     private readonly List<(string url, bool activate, bool isPrivate, bool isNewTab)> _pending = new();
+    private readonly Stack<(string url, bool isPrivate)> _closedTabs = new();
     private CoreWebView2Environment? _env;
     private CoreWebView2Environment? _privateEnv;
     private bool _envReady;
+    private WindowState _preFullScreenState = WindowState.Normal;
 
     public MainWindow(MainViewModel vm, AppSettingsService settings, HistoryRepository history,
         DownloadsViewModel downloads, ILogger<MainWindow> logger)
@@ -168,6 +170,8 @@ public partial class MainWindow : Window, IBrowserController
             if (string.Equals(e.Uri, "about:blank", StringComparison.OrdinalIgnoreCase)) return;
             tab.IsNewTab = false;
             tab.IsLoading = true;
+            tab.BlockedCount = 0; // reset the shield counter for the new page
+            tab.ReaderMode = false;
             tab.Url = e.Uri;
             if (tab.IsActive) _vm.OmniboxText = e.Uri;
         };
@@ -239,6 +243,7 @@ public partial class MainWindow : Window, IBrowserController
                 {
                     try { e.Response = core.Environment.CreateWebResourceResponse(null, 403, "Blocked by D!G!", ""); }
                     catch { /* ignore */ }
+                    Dispatcher.BeginInvoke(() => tab.BlockedCount++);
                 }
             };
         }
@@ -278,6 +283,8 @@ public partial class MainWindow : Window, IBrowserController
         if (!_views.TryGetValue(tab.Id, out var wv)) return;
 
         var wasActive = tab.IsActive;
+        if (!tab.IsPrivate && !tab.IsNewTab && !string.IsNullOrWhiteSpace(tab.Url) && tab.Url != "about:blank")
+            _closedTabs.Push((tab.Url, tab.IsPrivate));
         BrowserHost.Children.Remove(wv);
         try { wv.Dispose(); } catch { }
         _views.Remove(tab.Id);
@@ -349,6 +356,119 @@ public partial class MainWindow : Window, IBrowserController
         _vm.OmniboxText = string.Empty;
         WithActiveCore(c => c.Navigate("about:blank"));
     }
+
+    public void ReopenClosedTab()
+    {
+        while (_closedTabs.Count > 0)
+        {
+            var (url, isPrivate) = _closedTabs.Pop();
+            if (string.IsNullOrWhiteSpace(url)) continue;
+            if (isPrivate) NewPrivateTab(url); else NewTab(url);
+            return;
+        }
+    }
+
+    public void DuplicateTab(BrowserTabViewModel? tab)
+    {
+        tab ??= _vm.ActiveTab;
+        if (tab is null || string.IsNullOrWhiteSpace(tab.Url) || tab.Url == "about:blank") { NewTab(); return; }
+        if (tab.IsPrivate) NewPrivateTab(tab.Url); else NewTab(tab.Url);
+    }
+
+    public void TogglePin(BrowserTabViewModel? tab)
+    {
+        tab ??= _vm.ActiveTab;
+        if (tab is null) return;
+        tab.IsPinned = !tab.IsPinned;
+        // Keep pinned tabs on the left, preserving relative order.
+        var ordered = _vm.Tabs.OrderByDescending(t => t.IsPinned).ToList();
+        for (var i = 0; i < ordered.Count; i++)
+        {
+            var current = _vm.Tabs.IndexOf(ordered[i]);
+            if (current != i) _vm.Tabs.Move(current, i);
+        }
+    }
+
+    public void ToggleMute(BrowserTabViewModel? tab)
+    {
+        tab ??= _vm.ActiveTab;
+        if (tab is null || !_views.TryGetValue(tab.Id, out var wv) || wv.CoreWebView2 is null) return;
+        try
+        {
+            wv.CoreWebView2.IsMuted = !wv.CoreWebView2.IsMuted;
+            tab.IsMuted = wv.CoreWebView2.IsMuted;
+        }
+        catch (Exception ex) { _logger.LogWarning(ex, "mute toggle"); }
+    }
+
+    public void CloseOtherTabs(BrowserTabViewModel? tab)
+    {
+        tab ??= _vm.ActiveTab;
+        if (tab is null) return;
+        foreach (var other in _vm.Tabs.Where(t => !ReferenceEquals(t, tab) && !t.IsPinned).ToList())
+            CloseTab(other);
+    }
+
+    public void NextTab() => StepTab(1);
+    public void PreviousTab() => StepTab(-1);
+
+    private void StepTab(int delta)
+    {
+        if (_vm.Tabs.Count < 2 || _vm.ActiveTab is null) return;
+        var i = _vm.Tabs.IndexOf(_vm.ActiveTab);
+        if (i < 0) return;
+        var n = (i + delta + _vm.Tabs.Count) % _vm.Tabs.Count;
+        Activate(_vm.Tabs[n]);
+    }
+
+    public void Print()
+        => WithActiveCore(c => { try { c.ShowPrintUI(CoreWebView2PrintDialogKind.Browser); } catch (Exception ex) { _logger.LogWarning(ex, "print"); } });
+
+    public void ToggleReaderMode()
+    {
+        if (_vm.ActiveTab is null) return;
+        if (_vm.ActiveTab.ReaderMode)
+        {
+            _vm.ActiveTab.ReaderMode = false;
+            Reload();
+            return;
+        }
+        _vm.ActiveTab.ReaderMode = true;
+        WithActiveCore(c => _ = c.ExecuteScriptAsync(ReaderModeScript));
+    }
+
+    public void ToggleFullScreen()
+    {
+        if (_vm.IsFullScreen)
+        {
+            _preFullScreenState = WindowState == WindowState.Maximized ? WindowState.Maximized : WindowState.Normal;
+            if (WindowState == WindowState.Maximized) WindowState = WindowState.Normal;
+            WindowState = WindowState.Maximized;
+        }
+        else
+        {
+            WindowState = _preFullScreenState;
+        }
+    }
+
+    // A compact Readability-style transform: find the densest article-ish block and
+    // re-render it as centred, legible prose. Best-effort; ToggleReaderMode reloads to exit.
+    private const string ReaderModeScript = @"
+(function(){
+  try{
+    var best=null,score=0;
+    var nodes=document.querySelectorAll('article,main,[role=main],.post,.article,.content,#content');
+    nodes.forEach(function(n){var t=(n.innerText||'').length; if(t>score){score=t;best=n;}});
+    if(!best){var ps=Array.from(document.querySelectorAll('p')); ps.sort(function(a,b){return (b.innerText||'').length-(a.innerText||'').length;}); if(ps[0])best=ps[0].parentElement;}
+    var html=best?best.innerHTML:document.body.innerHTML;
+    var title=document.title||'';
+    document.body.innerHTML='<div id=dig-reader><h1>'+title+'</h1>'+html+'</div>';
+    var s=document.createElement('style');
+    s.textContent='html,body{background:#12161d !important;} #dig-reader{max-width:760px;margin:40px auto;padding:0 24px;color:#e8edf4;font-family:Georgia,serif;font-size:18px;line-height:1.75;} #dig-reader h1{font-size:30px;line-height:1.25;color:#fff;margin:0 0 20px;} #dig-reader img{max-width:100%;height:auto;border-radius:8px;} #dig-reader a{color:#35d9ff;}';
+    document.head.appendChild(s);
+    window.scrollTo(0,0);
+  }catch(e){}
+})();";
 
     private void WithActiveCore(Action<CoreWebView2> action)
     {
