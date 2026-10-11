@@ -35,7 +35,7 @@
         <KeyBinding Modifiers="Control" Key="NumPad0" Command="{Binding ZoomResetCommand}" />
     </Window.InputBindings>
 
-    <Grid>
+    <Grid x:Name="RootGrid">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -117,8 +117,12 @@
         </Grid>
 
         <!-- Tab strip -->
-        <Border Grid.Row="2" Background="{DynamicResource Brush.Graphite}" Padding="8,0,8,6">
-            <StackPanel Orientation="Horizontal">
+        <Border Grid.Row="2" Background="{DynamicResource Brush.Graphite}" Padding="8,0,8,0">
+          <DockPanel>
+            <ProgressBar DockPanel.Dock="Bottom" Height="2" IsIndeterminate="True" BorderThickness="0" Margin="-8,4,-8,0"
+                         Foreground="{DynamicResource Brush.Cyan}" Background="Transparent"
+                         Visibility="{Binding ActiveTab.IsLoading, Converter={StaticResource BoolToVis}}" />
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                 <ItemsControl ItemsSource="{Binding Tabs}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -167,6 +171,7 @@
                 </ItemsControl>
                 <Button Style="{DynamicResource ToolbarButton}" Content="&#xE710;" ToolTip="New tab" Command="{Binding NewTabCommand}" />
             </StackPanel>
+          </DockPanel>
         </Border>
 
         <!-- Body: sidebar + content -->
@@ -194,9 +199,10 @@
 
             <!-- Content area -->
             <Grid Grid.Column="1" Background="{DynamicResource Brush.Obsidian}">
-                <!-- Browser host (WebView2 controls added in code-behind) -->
+                <!-- Browser host (WebView2 controls added in code-behind).
+                     Hidden when the start page shows (WebView2 would paint over it). -->
                 <Grid x:Name="BrowserHost"
-                      Visibility="{Binding IsBrowserVisible, Converter={StaticResource BoolToVis}}" />
+                      Visibility="{Binding ShowWebView, Converter={StaticResource BoolToVis}}" />
                 <!-- Tool module host -->
                 <ContentControl Content="{Binding CurrentModule}" Style="{DynamicResource FadeInOnShow}"
                                 Visibility="{Binding IsBrowserVisible, Converter={StaticResource InverseBoolToVis}}" />
@@ -277,29 +283,6 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- Loading bar -->
-                <ProgressBar VerticalAlignment="Top" Height="3" IsIndeterminate="True" BorderThickness="0"
-                             Foreground="{DynamicResource Brush.Cyan}" Background="Transparent"
-                             Visibility="{Binding ActiveTab.IsLoading, Converter={StaticResource BoolToVis}}" />
-
-                <!-- Find-in-page bar -->
-                <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,10,18,0"
-                        Background="{DynamicResource Brush.Surface}" BorderBrush="{DynamicResource Brush.Border}"
-                        BorderThickness="1" CornerRadius="8" Padding="8,6"
-                        Visibility="{Binding FindVisible, Converter={StaticResource BoolToVis}}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBox x:Name="FindBox" Width="220" VerticalContentAlignment="Center"
-                                 Text="{Binding FindText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Find on page">
-                            <TextBox.InputBindings>
-                                <KeyBinding Key="Return" Command="{Binding FindNextCommand}" />
-                                <KeyBinding Key="Escape" Command="{Binding CloseFindCommand}" />
-                            </TextBox.InputBindings>
-                        </TextBox>
-                        <Button Style="{DynamicResource ToolbarButton}" Content="&#xE70E;" ToolTip="Previous" Command="{Binding FindPreviousCommand}" />
-                        <Button Style="{DynamicResource ToolbarButton}" Content="&#xE70D;" ToolTip="Next" Command="{Binding FindNextCommand}" />
-                        <Button Style="{DynamicResource ToolbarButton}" Content="&#xE8BB;" ToolTip="Close (Esc)" Command="{Binding CloseFindCommand}" />
-                    </StackPanel>
-                </Border>
             </Grid>
         </Grid>
 
@@ -320,15 +303,36 @@
             </Grid>
         </Border>
 
-        <!-- Command palette overlay -->
-        <Grid Grid.RowSpan="5" Background="#AA000000"
-              Visibility="{Binding CommandPalette.IsOpen, Converter={StaticResource BoolToVis}}">
-            <Border Width="580" VerticalAlignment="Top" Margin="0,90,0,0" Style="{DynamicResource Card}">
+        <!-- Find-in-page bar (Popup so it paints above the native WebView2) -->
+        <Popup IsOpen="{Binding FindVisible, Mode=TwoWay}" PlacementTarget="{Binding ElementName=Omnibox}"
+               Placement="Bottom" HorizontalOffset="0" VerticalOffset="6" StaysOpen="False"
+               AllowsTransparency="True" PopupAnimation="Fade">
+            <Border Background="{DynamicResource Brush.Surface}" BorderBrush="{DynamicResource Brush.Cyan}"
+                    BorderThickness="1" CornerRadius="8" Padding="8,6">
+                <StackPanel Orientation="Horizontal">
+                    <TextBox x:Name="FindBox" Width="240" VerticalContentAlignment="Center"
+                             Text="{Binding FindText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Find on page">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Return" Command="{Binding FindNextCommand}" />
+                            <KeyBinding Key="Escape" Command="{Binding CloseFindCommand}" />
+                        </TextBox.InputBindings>
+                    </TextBox>
+                    <Button Style="{DynamicResource ToolbarButton}" Content="&#xE70E;" ToolTip="Previous" Command="{Binding FindPreviousCommand}" />
+                    <Button Style="{DynamicResource ToolbarButton}" Content="&#xE70D;" ToolTip="Next" Command="{Binding FindNextCommand}" />
+                    <Button Style="{DynamicResource ToolbarButton}" Content="&#xE8BB;" ToolTip="Close (Esc)" Command="{Binding CloseFindCommand}" />
+                </StackPanel>
+            </Border>
+        </Popup>
+
+        <!-- Command palette (Popup, centred) -->
+        <Popup IsOpen="{Binding CommandPalette.IsOpen, Mode=TwoWay}" PlacementTarget="{Binding ElementName=RootGrid}"
+               Placement="Center" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+            <Border Width="600" Style="{DynamicResource Card}" Margin="0,-200,0,0">
                 <StackPanel>
                     <TextBox x:Name="PaletteInput" FontSize="15"
                              Text="{Binding CommandPalette.Query, UpdateSourceTrigger=PropertyChanged}"
                              KeyDown="PaletteInput_KeyDown" />
-                    <ListBox x:Name="PaletteList" Margin="0,8,0,0" MaxHeight="320" Background="Transparent" BorderThickness="0"
+                    <ListBox x:Name="PaletteList" Margin="0,8,0,0" MaxHeight="340" Background="Transparent" BorderThickness="0"
                              ItemsSource="{Binding CommandPalette.Results}"
                              SelectedItem="{Binding CommandPalette.Selected}"
                              MouseDoubleClick="PaletteList_MouseDoubleClick">
@@ -343,6 +347,6 @@
                     </ListBox>
                 </StackPanel>
             </Border>
-        </Grid>
+        </Popup>
     </Grid>
 </Window>

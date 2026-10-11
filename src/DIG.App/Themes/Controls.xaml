@@ -251,6 +251,21 @@
         </Setter>
     </Style>
 
+    <!-- Chrome-less button (used for calendar day cells) -->
+    <Style x:Key="PlainButton" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <ContentPresenter />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Status "pill" -->
     <Style x:Key="Pill" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource Brush.SurfaceAlt}" />

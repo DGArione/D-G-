@@ -771,50 +771,121 @@
         </Grid>
     </DataTemplate>
 
-    <!-- ============================ CALENDAR ============================ -->
+    <!-- ============================ CALENDAR (month grid) ============================ -->
     <DataTemplate DataType="{x:Type vm:CalendarViewModel}">
         <Grid Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="320" />
+            </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" Text="Calendar &amp; Shifts" Style="{DynamicResource Text.Heading}" Margin="0,0,0,10" />
-            <WrapPanel Grid.Row="1" Margin="0,0,0,12">
-                <TextBox Width="220" Text="{Binding NewTitle, UpdateSourceTrigger=PropertyChanged}" ToolTip="Title" Margin="0,0,8,6" VerticalContentAlignment="Center" />
-                <DatePicker SelectedDate="{Binding NewDate}" Margin="0,0,8,6" />
-                <TextBox Width="70" Text="{Binding NewStart}" ToolTip="Start (HH:mm)" Margin="0,0,8,6" VerticalContentAlignment="Center" />
-                <TextBox Width="70" Text="{Binding NewEnd}" ToolTip="End (HH:mm)" Margin="0,0,8,6" VerticalContentAlignment="Center" />
-                <ComboBox Width="110" ItemsSource="{Binding Kinds}" SelectedItem="{Binding NewKind}" Margin="0,0,8,6" />
-                <Button Content="Add" Style="{DynamicResource AccentButton}" Command="{Binding AddEventCommand}" Margin="0,0,8,6" />
-                <TextBlock Text="{Binding Status}" Style="{DynamicResource Text.Secondary}" VerticalAlignment="Center" />
-            </WrapPanel>
-            <Border Grid.Row="2" Style="{DynamicResource Card}" Padding="4">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding Events}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Grid Margin="4,3">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Style="{DynamicResource Pill}" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Kind}" FontSize="11" />
-                                    </Border>
-                                    <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                                        <TextBlock Text="{Binding Title}" />
-                                        <TextBlock Text="{Binding When}" Style="{DynamicResource Text.Secondary}" />
-                                    </StackPanel>
-                                    <Button Grid.Column="2" Content="Delete" Style="{DynamicResource SubtleButton}"
-                                            Command="{Binding DataContext.DeleteEventCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                            CommandParameter="{Binding}" />
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
+
+            <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Calendar &amp; Shifts" Style="{DynamicResource Text.Heading}" Margin="0,0,0,10" />
+
+            <!-- Month grid -->
+            <DockPanel Grid.Row="1" Grid.Column="0" Margin="0,0,16,0">
+                <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <Button Style="{DynamicResource ToolbarButton}" Content="&#xE76B;" ToolTip="Previous month" Command="{Binding PrevMonthCommand}" />
+                        <TextBlock Text="{Binding MonthLabel}" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" Margin="8,0" MinWidth="170" />
+                        <Button Style="{DynamicResource ToolbarButton}" Content="&#xE76C;" ToolTip="Next month" Command="{Binding NextMonthCommand}" />
+                    </StackPanel>
+                    <Button HorizontalAlignment="Right" Content="Today" Style="{DynamicResource SubtleButton}" Command="{Binding TodayCommand}" />
+                </Grid>
+
+                <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding WeekdayHeaders}" Margin="0,0,0,2">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="7" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" HorizontalAlignment="Center" Style="{DynamicResource Text.Secondary}" FontWeight="SemiBold" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <ItemsControl ItemsSource="{Binding Days}">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="7" Rows="6" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{DynamicResource PlainButton}"
+                                    Command="{Binding DataContext.SelectDayCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    CommandParameter="{Binding}">
+                                <Border x:Name="cell" Margin="2" MinHeight="74" CornerRadius="6" Padding="5"
+                                        Background="{DynamicResource Brush.Surface}" BorderBrush="Transparent" BorderThickness="1.5">
+                                    <DockPanel>
+                                        <TextBlock DockPanel.Dock="Top" Text="{Binding Day}" HorizontalAlignment="Right"
+                                                   FontSize="12" Foreground="{DynamicResource Brush.TextSecondary}" />
+                                        <ItemsControl ItemsSource="{Binding Events}" Margin="0,2,0,0">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="{DynamicResource Brush.Cyan}" CornerRadius="3" Padding="4,1" Margin="0,1,0,0">
+                                                        <TextBlock Text="{Binding Title}" FontSize="10" TextTrimming="CharacterEllipsis"
+                                                                   Foreground="{DynamicResource Brush.Obsidian}" />
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </DockPanel>
+                                </Border>
+                            </Button>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding InMonth}" Value="False">
+                                    <Setter TargetName="cell" Property="Opacity" Value="0.4" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsToday}" Value="True">
+                                    <Setter TargetName="cell" Property="BorderBrush" Value="{DynamicResource Brush.Cyan}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                    <Setter TargetName="cell" Property="Background" Value="{DynamicResource Brush.SurfaceAlt}" />
+                                    <Setter TargetName="cell" Property="BorderBrush" Value="{DynamicResource Brush.Violet}" />
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </DockPanel>
+
+            <!-- Selected day panel -->
+            <Border Grid.Row="1" Grid.Column="1" Style="{DynamicResource Card}">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="{Binding SelectedDayLabel}" FontWeight="SemiBold" Margin="0,0,0,8" TextWrapping="Wrap" />
+                    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <TextBox Text="{Binding NewTitle, UpdateSourceTrigger=PropertyChanged}" ToolTip="Event / shift title" Margin="0,0,0,6">
+                            <TextBox.InputBindings><KeyBinding Key="Return" Command="{Binding AddEventCommand}" /></TextBox.InputBindings>
+                        </TextBox>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                            <TextBox Width="64" Text="{Binding NewStart}" ToolTip="Start (HH:mm)" />
+                            <TextBlock Text="–" VerticalAlignment="Center" Margin="6,0" />
+                            <TextBox Width="64" Text="{Binding NewEnd}" ToolTip="End (HH:mm)" />
+                            <ComboBox Width="110" Margin="8,0,0,0" ItemsSource="{Binding Kinds}" SelectedItem="{Binding NewKind}" />
+                        </StackPanel>
+                        <Button Content="Add to this day" Style="{DynamicResource AccentButton}" HorizontalAlignment="Left" Command="{Binding AddEventCommand}" />
+                        <TextBlock Text="{Binding Status}" Style="{DynamicResource Text.Secondary}" Margin="0,4,0,0" />
+                    </StackPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding SelectedDayEvents}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="{Binding Title}" />
+                                            <TextBlock Text="{Binding When}" Style="{DynamicResource Text.Secondary}" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Content="&#xE74D;" Style="{DynamicResource ToolbarButton}" Width="24" Height="24" FontSize="11" ToolTip="Delete"
+                                                Command="{Binding DataContext.DeleteEventCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
             </Border>
         </Grid>
     </DataTemplate>

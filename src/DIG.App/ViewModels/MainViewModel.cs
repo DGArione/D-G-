@@ -40,6 +40,7 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] private object? _currentModule;
     [ObservableProperty] private bool _isBrowserVisible = true;
     [ObservableProperty] private bool _showStartPage = true;
+    [ObservableProperty] private bool _showWebView;
 
     public ObservableCollection<DIG.Core.Models.Bookmark> StartBookmarks { get; } = new();
 
@@ -50,7 +51,12 @@ public sealed partial class MainViewModel : ObservableObject
     private BrowserTabViewModel? _subscribedTab;
 
     private void UpdateStartPage()
-        => ShowStartPage = IsBrowserVisible && (ActiveTab?.IsNewTab ?? false);
+    {
+        ShowStartPage = IsBrowserVisible && (ActiveTab?.IsNewTab ?? false);
+        // The WebView2 is a native window that always paints over WPF content, so it
+        // must be hidden whenever the WPF start page should be visible.
+        ShowWebView = IsBrowserVisible && !ShowStartPage;
+    }
 
     partial void OnIsBrowserVisibleChanged(bool value) => UpdateStartPage();
 
